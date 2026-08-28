@@ -25,7 +25,7 @@ export default async function RootLayout({
       <body className="flex min-h-screen flex-col font-sans antialiased">
         <CartProvider>
           {!isSupabaseConfigured && <SupabaseSetupNotice />}
-          <Header user={user ? { email: user.email } : null} />
+          <Header user={user ? { email: user.email, isAdmin: user.isAdmin } : null} />
           <main className="flex-1">{children}</main>
           <Footer />
         </CartProvider>

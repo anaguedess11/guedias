@@ -75,7 +75,31 @@ Reinicia `npm run dev` — a loja e o registo/login já devem funcionar.
    o código já não precisa de mudar, o Stripe Checkout mostra
    automaticamente os métodos que tiveres ativos.
 
-## 4. Publicar (Vercel) e ativar pagamentos a sério
+## 4. Página de administração (criar/editar produtos sem SQL)
+
+Já tens o Supabase configurado (secção 2)? Falta só tornares-te administradora:
+
+1. Cria a tua conta em `/conta/registar`, se ainda não tiveres uma.
+2. No **SQL Editor** do Supabase, corre
+   [`supabase/migrations/0002_admin_products.sql`](supabase/migrations/0002_admin_products.sql)
+   (se criaste o projeto de raiz depois desta funcionalidade existir, isto já
+   está incluído no `schema.sql` e podes saltar este passo).
+3. Ainda no SQL Editor, troca o email e corre:
+   ```sql
+   update profiles set is_admin = true where id =
+     (select id from auth.users where email = 'o-teu-email@exemplo.com');
+   ```
+4. Volta a entrar no site (ou recarrega a página) — aparece um link **Admin**
+   no menu, que leva a `/admin`: lista de produtos, com criar/editar/apagar,
+   tudo por formulário (nome, preço, categoria, cores, materiais,
+   personalização, foto opcional por URL, etc. — nada de SQL manual).
+
+Só contas com `is_admin = true` conseguem escrever na tabela `products` —
+é uma regra da própria base de dados (Row Level Security), não só da
+interface, por isso mesmo alguém a tentar contornar a página de admin não
+consegue escrever produtos sem essa permissão.
+
+## 5. Publicar (Vercel) e ativar pagamentos a sério
 
 1. Cria um repositório Git e envia o projeto para o GitHub (ou outro).
 2. Em [vercel.com](https://vercel.com), importa o repositório.
@@ -107,17 +131,23 @@ src/
     checkout/confirmacao/         → Confirmação (lida diretamente do Stripe)
     conta/entrar, conta/registar  → Login e registo (Supabase Auth)
     conta/page.tsx                → Perfil + histórico de encomendas
+    admin/                        → Painel de administração (só is_admin=true)
+      page.tsx                    → Lista de produtos (editar/apagar)
+      produtos/novo/               → Criar produto
+      produtos/[id]/editar/        → Editar produto
+      actions.ts                  → Server Actions (criar/editar/apagar produto)
     api/checkout/route.ts         → Cria a sessão de pagamento Stripe
     api/webhooks/stripe/route.ts  → Regista a encomenda paga na base de dados
-  components/                     → Header, Footer, carrinho, formulários, etc.
+  components/                     → Header, Footer, carrinho, ProductForm, etc.
   data/categories.ts              → As 4 categorias (taxonomia fixa)
   lib/
     data/products.ts              → Consultas de produtos ao Supabase
     supabase/                     → Clientes Supabase (browser/servidor/admin)
     stripe.ts                     → Cliente Stripe
-    auth.ts                       → Utilizador autenticado atual
+    auth.ts                       → Utilizador autenticado atual (+ isAdmin)
 supabase/
-  schema.sql                      → Tabelas + Row Level Security
+  schema.sql                      → Tabelas + Row Level Security (versão completa)
+  migrations/0002_admin_products.sql → Incremento: admin + foto por URL
   seed.sql                        → Categorias e 18 produtos fictícios
 middleware.ts                     → Refresca a sessão Supabase em cada pedido
 ```
@@ -139,13 +169,16 @@ middleware.ts                     → Refresca a sessão Supabase em cada pedido
 
 ## Notas
 
-- As imagens dos produtos são geradas visualmente (silhuetas em "camadas",
-  como uma impressão FDM) em vez de fotografias — fácil de substituir mais
-  tarde trocando o componente `PrintedObject` por um `<Image>` do Next.js e
-  um campo `image_url` na tabela `products`.
+- Por omissão, as imagens dos produtos são geradas visualmente (silhuetas em
+  "camadas", como uma impressão FDM). Em `/admin`, o campo "Foto (URL)" deixa
+  usar uma fotografia real em vez disso — se ficar vazio, mantém-se o
+  placeholder gerado.
 - As categorias (`src/data/categories.ts`) ficam fixas no código por
   simplicidade — são só 4 e raramente mudam. Os produtos, esses, vivem
-  inteiramente na base de dados.
+  inteiramente na base de dados e são geridos em `/admin`.
+- Só contas com `profiles.is_admin = true` conseguem criar/editar/apagar
+  produtos — é imposto por Row Level Security na base de dados, não só pela
+  interface. Ver secção 4 para te tornares administradora.
 - Envio limitado a Portugal por agora (`shipping_address_collection` em
   `src/app/api/checkout/route.ts`) — fácil de alargar a mais países.
 - `SUPABASE_SERVICE_ROLE_KEY` e `STRIPE_SECRET_KEY` nunca devem ter o
@@ -154,7 +187,7 @@ middleware.ts                     → Refresca a sessão Supabase em cada pedido
 
 ## Próximos passos sugeridos
 
-- Adicionar fotografias reais dos produtos.
-- Página de administração para criar/editar produtos sem SQL manual.
+- Upload de fotografias (Supabase Storage) em vez de colar um URL.
+- Gestão de stock/disponibilidade por produto.
 - Emails transacionais (confirmação de encomenda, atualização de estado).
 - Alargar `shipping_address_collection` a mais países, se aplicável.

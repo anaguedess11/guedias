@@ -5,6 +5,7 @@ import { getProductBySlug, getRelatedProducts } from "@/lib/data/products";
 import { getCategory } from "@/data/categories";
 import { formatPrice } from "@/lib/format";
 import { PrintedObject } from "@/components/PrintedObject";
+import { ProductVisual } from "@/components/ProductVisual";
 import { AddToCartForm } from "@/components/AddToCartForm";
 import { ProductCard } from "@/components/ProductCard";
 
@@ -49,7 +50,8 @@ export default async function ProductPage({ params }: { params: { slug: string }
       <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
         {/* Galeria */}
         <div>
-          <PrintedObject
+          <ProductVisual
+            imageUrl={product.imageUrl}
             profile={product.profile}
             color={product.colors[0]?.hex ?? "#C0663E"}
             className="aspect-square w-full rounded-xl2 shadow-card"

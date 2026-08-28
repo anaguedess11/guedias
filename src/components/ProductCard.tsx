@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Product } from "@/lib/types";
 import { formatPrice } from "@/lib/format";
-import { PrintedObject } from "@/components/PrintedObject";
+import { ProductVisual } from "@/components/ProductVisual";
 import { getCategory } from "@/data/categories";
 
 export function ProductCard({ product }: { product: Product }) {
@@ -13,7 +13,8 @@ export function ProductCard({ product }: { product: Product }) {
       className="card group block overflow-hidden hover:shadow-card"
     >
       <div className="relative aspect-[4/5] w-full">
-        <PrintedObject
+        <ProductVisual
+          imageUrl={product.imageUrl}
           profile={product.profile}
           color={product.colors[0]?.hex ?? "#C0663E"}
           className="h-full w-full transition-transform duration-500 group-hover:scale-[1.03]"

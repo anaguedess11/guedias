@@ -12,7 +12,11 @@ const NAV_LINKS = [
   { href: "/sobre", label: "Sobre" },
 ];
 
-export function Header({ user }: { user: { email: string } | null }) {
+export function Header({
+  user,
+}: {
+  user: { email: string; isAdmin: boolean } | null;
+}) {
   const { totalQty, isHydrated } = useCart();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -44,6 +48,16 @@ export function Header({ user }: { user: { email: string } | null }) {
               </Link>
             );
           })}
+          {user?.isAdmin && (
+            <Link
+              href="/admin"
+              className={`text-sm font-medium transition-colors ${
+                pathname.startsWith("/admin") ? "text-clay-600" : "text-stone-900/70 hover:text-stone-900"
+              }`}
+            >
+              Admin
+            </Link>
+          )}
         </nav>
 
         <div className="flex items-center gap-2">
@@ -87,6 +101,15 @@ export function Header({ user }: { user: { email: string } | null }) {
                 {link.label}
               </Link>
             ))}
+            {user?.isAdmin && (
+              <Link
+                href="/admin"
+                onClick={() => setOpen(false)}
+                className="rounded-lg px-3 py-2.5 text-sm font-medium text-stone-900/80 hover:bg-black/5"
+              >
+                Admin
+              </Link>
+            )}
             <div className="mt-1 flex flex-col gap-1 border-t border-black/5 pt-2">
               <AuthMenu user={user} variant="mobile" onNavigate={() => setOpen(false)} />
             </div>

@@ -33,6 +33,7 @@ create table if not exists products (
   details text[] not null default '{}',
   materials text[] not null default '{}',
   colors jsonb not null default '[]',            -- [{ "name": "Preto", "hex": "#232320" }, ...]
+  image_url text,                                 -- foto real opcional; sem isto usa-se o placeholder visual
   customizable boolean not null default false,
   customization_label text,
   customization_note text,
@@ -60,6 +61,7 @@ create table if not exists profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   full_name text,
   phone text,
+  is_admin boolean not null default false,
   created_at timestamptz not null default now()
 );
 
@@ -90,6 +92,34 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
+
+-- ─────────────────────────────────────────────────────────────
+-- Administração de produtos
+-- Só utilizadores com profiles.is_admin = true podem criar/editar/apagar
+-- produtos. Para te tornares admin, depois de teres uma conta criada:
+--   update profiles set is_admin = true where id =
+--     (select id from auth.users where email = 'o-teu-email@exemplo.com');
+-- ─────────────────────────────────────────────────────────────
+create policy "admins podem criar produtos"
+  on products for insert
+  with check (
+    exists (select 1 from profiles where profiles.id = auth.uid() and profiles.is_admin)
+  );
+
+create policy "admins podem editar produtos"
+  on products for update
+  using (
+    exists (select 1 from profiles where profiles.id = auth.uid() and profiles.is_admin)
+  )
+  with check (
+    exists (select 1 from profiles where profiles.id = auth.uid() and profiles.is_admin)
+  );
+
+create policy "admins podem apagar produtos"
+  on products for delete
+  using (
+    exists (select 1 from profiles where profiles.id = auth.uid() and profiles.is_admin)
+  );
 
 -- ─────────────────────────────────────────────────────────────
 -- Encomendas

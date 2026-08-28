@@ -6,6 +6,7 @@ export interface CurrentUser {
   id: string;
   email: string;
   fullName: string | null;
+  isAdmin: boolean;
 }
 
 export async function getCurrentUser(): Promise<CurrentUser | null> {
@@ -20,7 +21,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name")
+    .select("full_name, is_admin")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -28,5 +29,6 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     id: user.id,
     email: user.email ?? "",
     fullName: profile?.full_name ?? null,
+    isAdmin: profile?.is_admin ?? false,
   };
 }
