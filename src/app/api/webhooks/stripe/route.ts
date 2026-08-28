@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sendOrderConfirmationEmail } from "@/lib/email";
 
 // O corpo tem de chegar em bruto (não interpretado) para a verificação de
 // assinatura do Stripe funcionar — por isso lemos com request.text().
@@ -101,22 +102,37 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Erro ao gravar encomenda." }, { status: 500 });
   }
 
-  if (productLines.length > 0) {
-    const orderItems = productLines.map((li) => ({
-      order_id: order.id,
-      product_id: li.metadata!.product_id,
-      name: nameById.get(li.metadata!.product_id) ?? "Produto",
-      price_cents: li.price?.unit_amount ?? 0,
-      qty: li.quantity ?? 1,
-      color: li.metadata?.color || null,
-      material: li.metadata?.material || null,
-      personalization: li.metadata?.personalization || null,
-    }));
+  const orderItems = productLines.map((li) => ({
+    order_id: order.id,
+    product_id: li.metadata!.product_id,
+    name: nameById.get(li.metadata!.product_id) ?? "Produto",
+    price_cents: li.price?.unit_amount ?? 0,
+    qty: li.quantity ?? 1,
+    color: li.metadata?.color || null,
+    material: li.metadata?.material || null,
+    personalization: li.metadata?.personalization || null,
+  }));
 
+  if (orderItems.length > 0) {
     const { error: itemsError } = await admin.from("order_items").insert(orderItems);
     if (itemsError) {
       console.error("[guedias] erro ao gravar itens da encomenda:", itemsError.message);
     }
+  }
+
+  if (customerDetails?.email) {
+    await sendOrderConfirmationEmail(
+      {
+        id: order.id,
+        email: customerDetails.email,
+        shipping_name: shippingDetails?.name ?? customerDetails?.name ?? null,
+        shipping_address: shippingDetails?.address ?? customerDetails?.address ?? null,
+        subtotal_cents: subtotalCents,
+        shipping_cents: shippingCents,
+        total_cents: totalCents,
+      },
+      orderItems
+    );
   }
 
   return NextResponse.json({ received: true, orderId: order.id });

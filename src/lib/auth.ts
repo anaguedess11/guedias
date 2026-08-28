@@ -32,3 +32,9 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     isAdmin: profile?.is_admin ?? false,
   };
 }
+
+/** Devolve o utilizador atual só se for administrador; caso contrário null. */
+export async function requireAdmin(): Promise<CurrentUser | null> {
+  const user = await getCurrentUser();
+  return user?.isAdmin ? user : null;
+}

@@ -2,21 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth";
 import { categories } from "@/data/categories";
 import { ProductWriteInput } from "@/lib/types";
 
 interface ActionResult {
   error?: string;
   id?: string;
-}
-
-async function requireAdmin() {
-  const user = await getCurrentUser();
-  if (!user?.isAdmin) {
-    return null;
-  }
-  return user;
 }
 
 function validate(input: ProductWriteInput): string | null {

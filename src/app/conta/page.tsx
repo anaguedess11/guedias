@@ -13,9 +13,12 @@ interface OrderItemRow {
   personalization: string | null;
 }
 
+type FulfillmentStatus = "not_started" | "in_production" | "shipped" | "delivered";
+
 interface OrderRow {
   id: string;
   status: "pending" | "paid" | "failed" | "canceled";
+  fulfillment_status: FulfillmentStatus;
   total_cents: number;
   currency: string;
   created_at: string;
@@ -37,6 +40,13 @@ const STATUS_STYLE: Record<OrderRow["status"], string> = {
   canceled: "bg-black/5 text-stone-900/50",
 };
 
+const FULFILLMENT_LABEL: Record<FulfillmentStatus, string> = {
+  not_started: "A preparar",
+  in_production: "Em produção",
+  shipped: "Enviada",
+  delivered: "Entregue",
+};
+
 export default async function ContaPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/conta/entrar");
@@ -45,7 +55,7 @@ export default async function ContaPage() {
   const { data: orders } = await supabase
     .from("orders")
     .select(
-      "id, status, total_cents, currency, created_at, shipping_method, order_items(name, qty, price_cents, color, material, personalization)"
+      "id, status, fulfillment_status, total_cents, currency, created_at, shipping_method, order_items(name, qty, price_cents, color, material, personalization)"
     )
     .order("created_at", { ascending: false })
     .returns<OrderRow[]>();
@@ -85,11 +95,18 @@ export default async function ContaPage() {
                       })}
                     </p>
                   </div>
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-medium ${STATUS_STYLE[order.status]}`}
-                  >
-                    {STATUS_LABEL[order.status]}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {order.status === "paid" && (
+                      <span className="rounded-full bg-clay-500/10 px-3 py-1 text-xs font-medium text-clay-700">
+                        {FULFILLMENT_LABEL[order.fulfillment_status]}
+                      </span>
+                    )}
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-medium ${STATUS_STYLE[order.status]}`}
+                    >
+                      {STATUS_LABEL[order.status]}
+                    </span>
+                  </div>
                 </div>
 
                 <ul className="mt-4 divide-y divide-black/5 border-t border-black/5">

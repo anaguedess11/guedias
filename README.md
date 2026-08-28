@@ -99,7 +99,29 @@ Só contas com `is_admin = true` conseguem escrever na tabela `products` —
 interface, por isso mesmo alguém a tentar contornar a página de admin não
 consegue escrever produtos sem essa permissão.
 
-## 5. Publicar (Vercel) e ativar pagamentos a sério
+## 5. Emails transacionais (Resend)
+
+Confirmação de encomenda e atualizações de estado (em produção / enviada /
+entregue) são enviadas por email via [Resend](https://resend.com).
+
+1. Cria uma conta em [resend.com](https://resend.com) (tem plano gratuito).
+2. Em **API Keys**, cria uma chave e copia para `RESEND_API_KEY`.
+3. Sem verificares o teu próprio domínio, deixa `EMAIL_FROM` como
+   `Guedias <onboarding@resend.dev>` — o Resend permite enviar de teste com
+   este remetente. Quando tiveres um domínio, verifica-o em **Domains** no
+   Resend e muda `EMAIL_FROM` para algo como `Guedias <encomendas@oteudominio.pt>`.
+4. Se já tinhas a base de dados criada antes desta funcionalidade, corre
+   também [`supabase/migrations/0003_order_fulfillment.sql`](supabase/migrations/0003_order_fulfillment.sql)
+   no SQL Editor (adiciona o estado de produção/envio às encomendas).
+5. Testa: faz uma compra de teste (secção 3) — chega um email de confirmação
+   ao endereço que usaste no Stripe Checkout. Em `/admin/encomendas`, muda o
+   estado de uma encomenda paga para "Em produção", "Enviada" ou "Entregue"
+   — cada mudança envia um novo email ao cliente.
+
+Sem `RESEND_API_KEY` configurada, a loja continua a funcionar normalmente —
+só não envia emails (fica um aviso na consola do servidor).
+
+## 6. Publicar (Vercel) e ativar pagamentos a sério
 
 1. Cria um repositório Git e envia o projeto para o GitHub (ou outro).
 2. Em [vercel.com](https://vercel.com), importa o repositório.
@@ -136,18 +158,22 @@ src/
       produtos/novo/               → Criar produto
       produtos/[id]/editar/        → Editar produto
       actions.ts                  → Server Actions (criar/editar/apagar produto)
+      encomendas/page.tsx          → Lista de encomendas + mudar estado
+      encomendas/actions.ts        → Server Action (muda estado + envia email)
     api/checkout/route.ts         → Cria a sessão de pagamento Stripe
-    api/webhooks/stripe/route.ts  → Regista a encomenda paga na base de dados
+    api/webhooks/stripe/route.ts  → Regista a encomenda paga + email de confirmação
   components/                     → Header, Footer, carrinho, ProductForm, etc.
   data/categories.ts              → As 4 categorias (taxonomia fixa)
   lib/
     data/products.ts              → Consultas de produtos ao Supabase
     supabase/                     → Clientes Supabase (browser/servidor/admin)
     stripe.ts                     → Cliente Stripe
+    email.ts                      → Cliente Resend + templates de email
     auth.ts                       → Utilizador autenticado atual (+ isAdmin)
 supabase/
   schema.sql                      → Tabelas + Row Level Security (versão completa)
-  migrations/0002_admin_products.sql → Incremento: admin + foto por URL
+  migrations/0002_admin_products.sql   → Incremento: admin + foto por URL
+  migrations/0003_order_fulfillment.sql → Incremento: estado de produção/envio
   seed.sql                        → Categorias e 18 produtos fictícios
 middleware.ts                     → Refresca a sessão Supabase em cada pedido
 ```
@@ -160,12 +186,14 @@ middleware.ts                     → Refresca a sessão Supabase em cada pedido
 2. O cliente é redirecionado para a página segura do Stripe — nós nunca
    vemos nem guardamos dados de cartão.
 3. Depois de pagar, o Stripe chama `POST /api/webhooks/stripe`, que confirma
-   a assinatura do pedido e grava a encomenda (`orders` + `order_items`) na
+   a assinatura do pedido, grava a encomenda (`orders` + `order_items`) na
    base de dados com a service role key (ignora RLS de propósito — é o único
-   sítio do código que escreve encomendas).
+   sítio do código que escreve encomendas), e envia o email de confirmação.
 4. `/checkout/confirmacao` lê o resultado diretamente da sessão Stripe (não
    depende do webhook já ter corrido) e `/conta` lê as encomendas gravadas
    na base de dados para o utilizador autenticado.
+5. Em `/admin/encomendas`, mudar o estado de produção/envio de uma encomenda
+   paga envia automaticamente um email de atualização ao cliente.
 
 ## Notas
 
@@ -181,13 +209,13 @@ middleware.ts                     → Refresca a sessão Supabase em cada pedido
   interface. Ver secção 4 para te tornares administradora.
 - Envio limitado a Portugal por agora (`shipping_address_collection` em
   `src/app/api/checkout/route.ts`) — fácil de alargar a mais países.
-- `SUPABASE_SERVICE_ROLE_KEY` e `STRIPE_SECRET_KEY` nunca devem ter o
-  prefixo `NEXT_PUBLIC_` nem ser expostas ao browser — só são usadas em
-  Route Handlers (servidor).
+- `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY` e `RESEND_API_KEY` nunca
+  devem ter o prefixo `NEXT_PUBLIC_` nem ser expostas ao browser — só são
+  usadas em Route Handlers e Server Actions (servidor).
 
 ## Próximos passos sugeridos
 
 - Upload de fotografias (Supabase Storage) em vez de colar um URL.
 - Gestão de stock/disponibilidade por produto.
-- Emails transacionais (confirmação de encomenda, atualização de estado).
+- Número de seguimento (tracking) no email de "encomenda enviada".
 - Alargar `shipping_address_collection` a mais países, se aplicável.

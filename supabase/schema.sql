@@ -130,6 +130,10 @@ create table if not exists orders (
   stripe_session_id text unique,
   stripe_payment_intent text,
   status text not null default 'pending' check (status in ('pending', 'paid', 'failed', 'canceled')),
+  -- Estado de produção/envio, distinto do estado de pagamento acima.
+  -- Só avança manualmente, a partir de /admin/encomendas.
+  fulfillment_status text not null default 'not_started'
+    check (fulfillment_status in ('not_started', 'in_production', 'shipped', 'delivered')),
   email text not null,
   shipping_name text,
   shipping_address jsonb,
@@ -150,7 +154,8 @@ create policy "utilizador vê as próprias encomendas"
   using (auth.uid() = user_id);
 
 -- Não há policies de insert/update/delete: as encomendas só são escritas
--- pelo webhook do Stripe, que usa a service role key (ignora RLS).
+-- pelo webhook do Stripe e atualizadas a partir de /admin, ambos usando a
+-- service role key (ignora RLS) com verificação de administrador na app.
 
 -- ─────────────────────────────────────────────────────────────
 -- Itens da encomenda
