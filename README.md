@@ -99,6 +99,11 @@ Já tens o Supabase configurado (secção 2)? Falta só tornares-te administrado
    no SQL Editor — cria o bucket de Storage `product-images` (público para
    leitura, escrita só para admins). Sem isto, o botão "Carregar foto" dá erro
    mas o campo "colar um URL externo" continua a funcionar.
+6. Para a **conta do cliente** (editar perfil + morada guardada, detalhe da
+   encomenda com rastreio, favoritos), corre
+   [`supabase/migrations/0006_customer_account.sql`](supabase/migrations/0006_customer_account.sql).
+   A morada guardada no perfil é enviada para o Stripe como "cliente" e
+   aparece pré-preenchida na página de pagamento.
 
 Só contas com `is_admin = true` conseguem escrever na tabela `products` —
 é uma regra da própria base de dados (Row Level Security), não só da
@@ -163,14 +168,17 @@ src/
     checkout/page.tsx             → Revisão + escolha de envio → Stripe
     checkout/confirmacao/         → Confirmação (lida diretamente do Stripe)
     conta/entrar, conta/registar  → Login e registo (Supabase Auth)
-    conta/page.tsx                → Perfil + histórico de encomendas
+    conta/page.tsx                → Resumo: encomendas + atalhos
+    conta/perfil/                 → Editar nome, telefone e morada de envio guardada
+    conta/encomendas/[id]/        → Detalhe da encomenda + linha do tempo do estado
+    conta/favoritos/              → Lista de desejos (produtos guardados)
     admin/                        → Painel de administração (só is_admin=true)
       page.tsx                    → Painel: receita, encomendas por estado, mais vendidos, vendas/mês
-      produtos/page.tsx            → Lista de produtos (editar/apagar)
+      produtos/page.tsx            → Lista de produtos (filtros: categoria, destaque, foto… + pesquisa)
       produtos/novo/               → Criar produto (com upload de foto p/ Supabase Storage)
       produtos/[id]/editar/        → Editar produto
       actions.ts                  → Server Actions (criar/editar/apagar produto)
-      encomendas/page.tsx          → Lista de encomendas + mudar estado
+      encomendas/page.tsx          → Lista de encomendas (filtros: pagamento, produção, período + pesquisa)
       encomendas/[id]/page.tsx     → Detalhe da encomenda + ações
       encomendas/[id]/etiqueta/    → Etiqueta de envio otimizada para impressão (100×150 mm)
       encomendas/actions.ts        → Server Actions (estado, cancelar, reembolsar, notas, morada, reenviar email)
@@ -191,6 +199,7 @@ supabase/
   migrations/0003_order_fulfillment.sql → Incremento: estado de produção/envio
   migrations/0004_order_admin_actions.sql → Incremento: notas, reembolsos, estado "refunded"
   migrations/0005_product_images_storage.sql → Incremento: bucket de Storage p/ fotos de produtos
+  migrations/0006_customer_account.sql → Incremento: morada no perfil, cliente Stripe, favoritos
   seed.sql                        → Categorias e 18 produtos fictícios
 middleware.ts                     → Refresca a sessão Supabase em cada pedido
 ```

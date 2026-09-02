@@ -50,7 +50,7 @@ export default function CarrinhoPage() {
               <Link href={`/produto/${item.slug}`} className="shrink-0">
                 <PrintedObject
                   profile={item.profile}
-                  color={colorHexFromName(item.color) ?? "#C0663E"}
+                  color={colorHexFromName(item.color) ?? "#C7430F"}
                   className="h-24 w-24 rounded-xl sm:h-28 sm:w-28"
                 />
               </Link>

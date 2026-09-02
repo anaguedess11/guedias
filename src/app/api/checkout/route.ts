@@ -49,6 +49,16 @@ export async function POST(request: Request) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const { data: profile } = user
+    ? await supabase
+        .from("profiles")
+        .select(
+          "full_name, phone, shipping_name, shipping_line1, shipping_line2, shipping_postal_code, shipping_city, stripe_customer_id"
+        )
+        .eq("id", user.id)
+        .maybeSingle()
+    : { data: null };
+
   const productIds = [...new Set(items.map((it) => it.productId))];
   const { data: products, error: productsError } = await supabase
     .from("products")
@@ -147,12 +157,56 @@ export async function POST(request: Request) {
   const siteUrl = getSiteUrl();
   const stripe = getStripe();
 
+  // Cliente Stripe reutilizável — permite pré-preencher a morada guardada
+  // no perfil quando o cliente chega ao checkout do Stripe.
+  let customerId: string | undefined;
+  if (user) {
+    try {
+      const hasAddress = Boolean(
+        profile?.shipping_line1 && profile?.shipping_postal_code && profile?.shipping_city
+      );
+      const shipping = hasAddress
+        ? {
+            name: profile!.shipping_name || profile!.full_name || user.email || "Cliente",
+            address: {
+              line1: profile!.shipping_line1 as string,
+              line2: (profile!.shipping_line2 as string) || undefined,
+              postal_code: profile!.shipping_postal_code as string,
+              city: profile!.shipping_city as string,
+              country: "PT",
+            },
+          }
+        : undefined;
+
+      customerId = profile?.stripe_customer_id ?? undefined;
+
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: user.email,
+          name: profile?.full_name || undefined,
+          phone: profile?.phone || undefined,
+          shipping,
+        });
+        customerId = customer.id;
+        await supabase.from("profiles").update({ stripe_customer_id: customerId }).eq("id", user.id);
+      } else if (shipping) {
+        await stripe.customers.update(customerId, {
+          shipping,
+          phone: profile?.phone || undefined,
+        });
+      }
+    } catch (err) {
+      console.error("[guedias] não foi possível preparar o cliente Stripe:", err);
+      customerId = undefined; // segue com customer_email
+    }
+  }
+
   try {
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       line_items: lineItems,
       shipping_address_collection: { allowed_countries: ["PT"] },
-      customer_email: user?.email,
+      ...(customerId ? { customer: customerId } : { customer_email: user?.email }),
       locale: "pt",
       success_url: `${siteUrl}/checkout/confirmacao?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${siteUrl}/checkout`,

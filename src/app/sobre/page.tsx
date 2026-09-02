@@ -68,9 +68,9 @@ export default function SobrePage() {
           </div>
 
           <div className="grid grid-cols-3 gap-4">
-            <PrintedObject profile={[0.34, 0.48, 0.62, 0.78, 0.88, 0.8, 0.62]} color="#C0663E" className="aspect-[3/4] rounded-xl2 shadow-card" />
-            <PrintedObject profile={[0.9, 0.35, 0.3, 0.3, 0.35, 0.9]} color="#2C5F63" className="mt-8 aspect-[3/4] rounded-xl2 shadow-card" />
-            <PrintedObject profile={[0.4, 0.6, 0.6, 0.4]} color="#D9A441" className="aspect-[3/4] rounded-xl2 shadow-card" />
+            <PrintedObject profile={[0.34, 0.48, 0.62, 0.78, 0.88, 0.8, 0.62]} color="#C7430F" className="aspect-[3/4] rounded-xl2 shadow-card" />
+            <PrintedObject profile={[0.9, 0.35, 0.3, 0.3, 0.35, 0.9]} color="#3C61A6" className="mt-8 aspect-[3/4] rounded-xl2 shadow-card" />
+            <PrintedObject profile={[0.4, 0.6, 0.6, 0.4]} color="#E98F63" className="aspect-[3/4] rounded-xl2 shadow-card" />
           </div>
         </div>
       </section>

@@ -65,10 +65,19 @@ export default async function ContaPage() {
   return (
     <div className="container-page py-10 sm:py-14">
       <p className="eyebrow">A minha conta</p>
-      <h1 className="mt-2 font-display text-3xl font-semibold text-stone-900 sm:text-4xl">
+      <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-stone-900 sm:text-4xl">
         Olá{user.fullName ? `, ${user.fullName.split(" ")[0]}` : ""}
       </h1>
       <p className="mt-2 text-sm text-stone-900/55">{user.email}</p>
+
+      <div className="mt-5 flex flex-wrap gap-2.5">
+        <Link href="/conta/perfil" className="btn-secondary text-xs">
+          Editar perfil
+        </Link>
+        <Link href="/conta/favoritos" className="btn-secondary text-xs">
+          Os meus favoritos
+        </Link>
+      </div>
 
       <section className="mt-10">
         <h2 className="text-sm font-semibold text-stone-900">As tuas encomendas</h2>
@@ -83,7 +92,11 @@ export default async function ContaPage() {
         ) : (
           <div className="mt-4 space-y-4">
             {orders.map((order) => (
-              <div key={order.id} className="card p-5">
+              <Link
+                key={order.id}
+                href={`/conta/encomendas/${order.id}`}
+                className="card block p-5 transition-all hover:-translate-y-0.5 hover:shadow-card"
+              >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <p className="text-sm font-medium text-stone-900">
@@ -125,11 +138,12 @@ export default async function ContaPage() {
                   ))}
                 </ul>
 
-                <div className="mt-3 flex justify-between border-t border-black/5 pt-3 text-sm font-semibold text-stone-900">
-                  <span>Total</span>
-                  <span>{formatPrice(order.total_cents / 100)}</span>
+                <div className="mt-3 flex items-center justify-between border-t border-black/5 pt-3 text-sm">
+                  <span className="font-semibold text-stone-900">Total</span>
+                  <span className="font-semibold text-stone-900">{formatPrice(order.total_cents / 100)}</span>
                 </div>
-              </div>
+                <p className="mt-2 text-xs font-medium text-clay-600">Ver detalhe e estado →</p>
+              </Link>
             ))}
           </div>
         )}

@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useCart } from "@/components/CartProvider";
 import { PrintedObject } from "@/components/PrintedObject";
+import { createClient } from "@/lib/supabase/client";
 import { formatPrice } from "@/lib/format";
 
 const FREE_SHIPPING_THRESHOLD = 35;
@@ -15,6 +16,31 @@ export default function CheckoutPage() {
   const [shippingMethod, setShippingMethod] = useState<ShippingMethod>("standard");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [savedAddress, setSavedAddress] = useState<string | null>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return;
+      const { data } = await supabase
+        .from("profiles")
+        .select("shipping_name, shipping_line1, shipping_line2, shipping_postal_code, shipping_city")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (data?.shipping_line1) {
+        setSavedAddress(
+          [
+            data.shipping_name,
+            data.shipping_line1,
+            data.shipping_line2,
+            [data.shipping_postal_code, data.shipping_city].filter(Boolean).join(" "),
+          ]
+            .filter(Boolean)
+            .join(", ")
+        );
+      }
+    });
+  }, []);
 
   const shippingCost = useMemo(() => {
     if (shippingMethod === "expresso") return 7.9;
@@ -88,7 +114,7 @@ export default function CheckoutPage() {
               <div key={item.key} className="card flex gap-4 p-4">
                 <PrintedObject
                   profile={item.profile}
-                  color="#C0663E"
+                  color="#C7430F"
                   className="h-20 w-20 shrink-0 rounded-xl"
                 />
                 <div className="flex flex-1 flex-col justify-center">
@@ -108,6 +134,24 @@ export default function CheckoutPage() {
               </div>
             ))}
           </div>
+
+          {savedAddress && (
+            <div className="card flex flex-wrap items-start justify-between gap-3 p-5">
+              <div>
+                <h2 className="text-sm font-semibold text-stone-900">Morada de envio</h2>
+                <p className="mt-1 text-sm text-stone-900/60">{savedAddress}</p>
+                <p className="mt-1 text-xs text-stone-900/45">
+                  Aparece pré-preenchida no pagamento — podes alterá-la lá.
+                </p>
+              </div>
+              <Link
+                href="/conta/perfil"
+                className="text-xs font-medium text-clay-600 hover:text-clay-700"
+              >
+                Editar
+              </Link>
+            </div>
+          )}
 
           <div className="card space-y-3 p-6">
             <h2 className="text-sm font-semibold text-stone-900">Método de envio</h2>

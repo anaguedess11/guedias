@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Product } from "@/lib/types";
 import { formatPrice } from "@/lib/format";
 import { ProductVisual } from "@/components/ProductVisual";
+import { FavoriteButton } from "@/components/FavoriteButton";
 import { getCategory } from "@/data/categories";
 
 export function ProductCard({ product }: { product: Product }) {
@@ -13,6 +14,7 @@ export function ProductCard({ product }: { product: Product }) {
       className="card group block overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-card"
     >
       <div className="relative aspect-[4/5] w-full overflow-hidden">
+        <FavoriteButton productId={product.id} />
         <ProductVisual
           imageUrl={product.imageUrl}
           profile={product.profile}

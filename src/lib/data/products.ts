@@ -108,6 +108,16 @@ export async function getProductById(id: string): Promise<Product | null> {
   return mapRow(data as ProductRow);
 }
 
+export async function getProductsByIds(ids: string[]): Promise<Product[]> {
+  if (!isSupabaseConfigured || ids.length === 0) return [];
+  const supabase = createClient();
+  const { data, error } = await supabase.from("products").select(SELECT_COLUMNS).in("id", ids);
+  if (error || !data) return [];
+  const byId = new Map((data as ProductRow[]).map((row) => [row.id, mapRow(row)]));
+  // Preserva a ordem pedida (ex.: favoritos mais recentes primeiro)
+  return ids.map((id) => byId.get(id)).filter((p): p is Product => Boolean(p));
+}
+
 export async function getRelatedProducts(product: Product, limit = 4): Promise<Product[]> {
   if (!isSupabaseConfigured) return [];
   const supabase = createClient();

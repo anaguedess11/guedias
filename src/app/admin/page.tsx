@@ -151,16 +151,21 @@ export default async function AdminDashboardPage() {
         {/* Estado das encomendas */}
         <div className="card p-5">
           <h2 className="text-sm font-semibold text-stone-900">Estado das encomendas</h2>
-          <ul className="mt-4 space-y-2 text-sm">
+          <ul className="mt-4 space-y-1 text-sm">
             {["paid", "pending", "refunded", "failed", "canceled"].map((s) => (
-              <li key={s} className="flex items-center justify-between text-stone-900/70">
-                <span>{STATUS_LABELS[s]}</span>
-                <span className="font-medium text-stone-900">{statusCounts[s] ?? 0}</span>
+              <li key={s}>
+                <Link
+                  href={`/admin/encomendas?estado=${s}`}
+                  className="-mx-2 flex items-center justify-between rounded-lg px-2 py-1.5 text-stone-900/70 hover:bg-black/[0.03]"
+                >
+                  <span>{STATUS_LABELS[s]}</span>
+                  <span className="font-medium text-stone-900">{statusCounts[s] ?? 0}</span>
+                </Link>
               </li>
             ))}
           </ul>
           <Link
-            href="/admin/encomendas"
+            href="/admin/encomendas?estado=paid&producao=not_started"
             className="mt-4 flex items-center justify-between rounded-lg bg-clay-50 px-3 py-2.5 text-sm font-medium text-clay-700 hover:bg-clay-100"
           >
             <span>Por preparar</span>

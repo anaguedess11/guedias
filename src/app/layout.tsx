@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Fraunces, Inter } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/components/CartProvider";
+import { FavoritesProvider } from "@/components/FavoritesProvider";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { SupabaseSetupNotice } from "@/components/SupabaseSetupNotice";
@@ -40,10 +41,12 @@ export default async function RootLayout({
     <html lang="pt-PT" className={`${fraunces.variable} ${inter.variable}`}>
       <body className="flex min-h-screen flex-col font-sans antialiased">
         <CartProvider>
-          {!isSupabaseConfigured && <SupabaseSetupNotice />}
-          <Header user={user ? { email: user.email, isAdmin: user.isAdmin } : null} />
-          <main className="flex-1">{children}</main>
-          <Footer />
+          <FavoritesProvider>
+            {!isSupabaseConfigured && <SupabaseSetupNotice />}
+            <Header user={user ? { email: user.email, isAdmin: user.isAdmin } : null} />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </FavoritesProvider>
         </CartProvider>
       </body>
     </html>

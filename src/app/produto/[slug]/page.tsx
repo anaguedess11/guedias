@@ -7,6 +7,7 @@ import { formatPrice } from "@/lib/format";
 import { PrintedObject } from "@/components/PrintedObject";
 import { ProductVisual } from "@/components/ProductVisual";
 import { AddToCartForm } from "@/components/AddToCartForm";
+import { FavoriteButton } from "@/components/FavoriteButton";
 import { ProductCard } from "@/components/ProductCard";
 
 // Sem generateStaticParams: os produtos vivem na base de dados e podem
@@ -53,7 +54,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
           <ProductVisual
             imageUrl={product.imageUrl}
             profile={product.profile}
-            color={product.colors[0]?.hex ?? "#C0663E"}
+            color={product.colors[0]?.hex ?? "#C7430F"}
             className="aspect-square w-full rounded-xl2 shadow-card"
           />
           <div className="mt-4 grid grid-cols-4 gap-3">
@@ -90,6 +91,9 @@ export default async function ProductPage({ params }: { params: { slug: string }
 
           <div className="mt-8 border-t border-black/5 pt-8">
             <AddToCartForm product={product} />
+            <div className="mt-4">
+              <FavoriteButton productId={product.id} variant="inline" />
+            </div>
           </div>
 
           <div className="mt-10 space-y-6 border-t border-black/5 pt-8">

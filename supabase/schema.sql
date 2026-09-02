@@ -61,6 +61,13 @@ create table if not exists profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   full_name text,
   phone text,
+  -- Morada de envio guardada — pré-preenche o checkout (via cliente Stripe).
+  shipping_name text,
+  shipping_line1 text,
+  shipping_line2 text,
+  shipping_postal_code text,
+  shipping_city text,
+  stripe_customer_id text,
   is_admin boolean not null default false,
   created_at timestamptz not null default now()
 );
@@ -189,3 +196,29 @@ create policy "utilizador vê itens das próprias encomendas"
       and orders.user_id = auth.uid()
     )
   );
+
+-- ─────────────────────────────────────────────────────────────
+-- Favoritos (lista de desejos)
+-- ─────────────────────────────────────────────────────────────
+create table if not exists favorites (
+  user_id uuid not null references auth.users (id) on delete cascade,
+  product_id uuid not null references products (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (user_id, product_id)
+);
+
+create index if not exists favorites_user_id_idx on favorites (user_id);
+
+alter table favorites enable row level security;
+
+create policy "utilizador vê os próprios favoritos"
+  on favorites for select
+  using (auth.uid() = user_id);
+
+create policy "utilizador adiciona aos próprios favoritos"
+  on favorites for insert
+  with check (auth.uid() = user_id);
+
+create policy "utilizador remove dos próprios favoritos"
+  on favorites for delete
+  using (auth.uid() = user_id);
