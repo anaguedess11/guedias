@@ -26,29 +26,42 @@ const PROCESS_STEPS = [
 
 export default async function HomePage() {
   const featured = await getFeaturedProducts();
-  const showcaseName = featured[0]?.name ?? "um objeto Guedias";
+  const showcase = featured[0];
+  const showcaseName = showcase?.name ?? "um objeto Guedias";
 
   return (
     <div>
       {/* Hero */}
-      <section className="relative overflow-hidden bg-stone-50">
-        <div className="container-page grid gap-10 py-16 sm:py-24 lg:grid-cols-2 lg:items-center lg:gap-16">
+      <section className="relative overflow-hidden bg-pine-700 text-white">
+        <div
+          className="pointer-events-none absolute -right-32 -top-24 h-[32rem] w-[32rem] rounded-full opacity-40 blur-3xl"
+          style={{ background: "radial-gradient(circle, rgba(199,67,15,0.55), transparent 65%)" }}
+        />
+        <div
+          className="pointer-events-none absolute -bottom-40 -left-24 h-[28rem] w-[28rem] rounded-full opacity-30 blur-3xl"
+          style={{ background: "radial-gradient(circle, rgba(60,97,166,0.7), transparent 65%)" }}
+        />
+        <div className="container-page relative grid gap-10 py-20 sm:py-28 lg:grid-cols-2 lg:items-center lg:gap-16">
           <div className="animate-slide-up">
-            <p className="eyebrow">Impressão 3D · Feito em Portugal</p>
-            <h1 className="mt-4 font-display text-4xl font-semibold leading-[1.1] tracking-tight text-stone-900 sm:text-5xl lg:text-[3.4rem]">
-              Design em cada camada.
+            <p className="eyebrow text-clay-300">Impressão 3D · Feito em Portugal</p>
+            <h1 className="mt-5 font-display text-[2.25rem] font-semibold leading-[1.03] tracking-[-0.02em] text-white sm:text-5xl lg:text-[4rem]">
+              Design em cada{" "}
+              <span className="italic text-clay-300">camada</span>.
             </h1>
-            <p className="mt-5 max-w-md text-base leading-relaxed text-stone-900/65 sm:text-lg">
+            <p className="mt-6 max-w-md text-base leading-relaxed text-white/70 sm:text-lg">
               A Guedias transforma ideias em objetos reais através da impressão 3D.
               Decoração, utilidades e peças personalizadas, desenhadas e impressas
               uma a uma numa Creality Hi Combo.
             </p>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
+            <div className="mt-9 flex flex-wrap items-center gap-3">
               <Link href="/loja" className="btn-primary">
                 Explorar a loja
                 <ArrowIcon />
               </Link>
-              <Link href="/sobre" className="btn-secondary">
+              <Link
+                href="/sobre"
+                className="btn border border-white/25 bg-white/5 text-white hover:-translate-y-0.5 hover:bg-white/10 active:translate-y-0 active:scale-[0.97]"
+              >
                 Como fazemos
               </Link>
             </div>
@@ -58,23 +71,23 @@ export default async function HomePage() {
             <div className="grid grid-cols-2 gap-4 sm:gap-5">
               <PrintedObject
                 profile={[0.34, 0.48, 0.62, 0.78, 0.88, 0.8, 0.62, 0.46, 0.55, 0.66]}
-                color="#C0663E"
-                className="aspect-[3/4] rounded-xl2 shadow-card"
+                color="#C7430F"
+                className="aspect-[3/4] rounded-xl2 shadow-lift ring-1 ring-white/10"
               />
               <PrintedObject
                 profile={[0.9, 0.35, 0.3, 0.3, 0.35, 0.9]}
-                color="#2C5F63"
-                className="mt-8 aspect-[3/4] rounded-xl2 shadow-card"
+                color="#3C61A6"
+                className="mt-8 aspect-[3/4] rounded-xl2 shadow-lift ring-1 ring-white/10"
               />
               <PrintedObject
                 profile={[0.4, 0.6, 0.6, 0.4]}
-                color="#8A9A78"
-                className="aspect-[3/4] rounded-xl2 shadow-card"
+                color="#A8B7CC"
+                className="aspect-[3/4] rounded-xl2 shadow-lift ring-1 ring-white/10"
               />
               <PrintedObject
                 profile={[0.9, 0.75, 0.6, 0.75, 0.9]}
-                color="#D9A441"
-                className="-mt-8 aspect-[3/4] rounded-xl2 shadow-card"
+                color="#E98F63"
+                className="-mt-8 aspect-[3/4] rounded-xl2 shadow-lift ring-1 ring-white/10"
               />
             </div>
           </div>
@@ -82,7 +95,12 @@ export default async function HomePage() {
       </section>
 
       {/* Do ficheiro ao objeto — animação controlada pelo scroll */}
-      <PrintProcessScroll productName={showcaseName} />
+      <PrintProcessScroll
+        productName={showcaseName}
+        photoUrl={showcase?.imageUrl}
+        profile={showcase?.profile}
+        color={showcase?.colors[0]?.hex}
+      />
 
       {/* Categorias */}
       <section className="section">
@@ -90,7 +108,7 @@ export default async function HomePage() {
           <div className="flex items-end justify-between gap-4">
             <div>
               <p className="eyebrow">Explorar</p>
-              <h2 className="mt-2 font-display text-2xl font-semibold text-stone-900 sm:text-3xl">
+              <h2 className="mt-2 font-display text-3xl font-semibold tracking-tight text-stone-900 sm:text-4xl">
                 Categorias
               </h2>
             </div>
@@ -128,7 +146,7 @@ export default async function HomePage() {
           <div className="flex items-end justify-between gap-4">
             <div>
               <p className="eyebrow">Seleção Guedias</p>
-              <h2 className="mt-2 font-display text-2xl font-semibold text-stone-900 sm:text-3xl">
+              <h2 className="mt-2 font-display text-3xl font-semibold tracking-tight text-stone-900 sm:text-4xl">
                 Produtos em destaque
               </h2>
             </div>
@@ -156,7 +174,7 @@ export default async function HomePage() {
         <div className="container-page">
           <div className="mx-auto max-w-xl text-center">
             <p className="eyebrow">O processo</p>
-            <h2 className="mt-2 font-display text-2xl font-semibold text-stone-900 sm:text-3xl">
+            <h2 className="mt-2 font-display text-3xl font-semibold tracking-tight text-stone-900 sm:text-4xl">
               Da ideia ao objeto, camada a camada
             </h2>
           </div>
@@ -180,8 +198,8 @@ export default async function HomePage() {
       {/* CTA / Sobre teaser */}
       <section className="section bg-pine-700">
         <div className="container-page flex flex-col items-center gap-6 text-center">
-          <p className="eyebrow text-clay-200">Feito com a Creality Hi Combo</p>
-          <h2 className="max-w-xl font-display text-2xl font-semibold text-white sm:text-3xl">
+          <p className="eyebrow text-clay-300">Feito com a Creality Hi Combo</p>
+          <h2 className="max-w-2xl font-display text-3xl font-semibold tracking-tight text-white sm:text-4xl">
             Cada peça Guedias nasce de um ficheiro digital e ganha forma física, a sério, na nossa impressora.
           </h2>
           <p className="max-w-lg text-sm leading-relaxed text-white/70 sm:text-base">
@@ -197,7 +215,7 @@ export default async function HomePage() {
   );
 }
 
-const CATEGORY_TINTS = ["#C0663E", "#2C5F63", "#8A9A78", "#D9A441"];
+const CATEGORY_TINTS = ["#C7430F", "#3C61A6", "#0B1E3D", "#E98F63"];
 
 function ArrowIcon() {
   return (

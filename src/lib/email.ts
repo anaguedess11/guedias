@@ -40,19 +40,19 @@ export interface EmailOrder {
 
 function layout(title: string, bodyHtml: string): string {
   return `
-  <div style="font-family: -apple-system, Segoe UI, Helvetica, Arial, sans-serif; background:#F7F5F1; padding:32px 16px;">
-    <div style="max-width:520px; margin:0 auto; background:#ffffff; border-radius:16px; overflow:hidden; border:1px solid #EFEBE4;">
-      <div style="background:#233833; padding:24px 32px;">
+  <div style="font-family: -apple-system, Segoe UI, Helvetica, Arial, sans-serif; background:#F1F5FA; padding:32px 16px;">
+    <div style="max-width:520px; margin:0 auto; background:#ffffff; border-radius:16px; overflow:hidden; border:1px solid #E3EAF3;">
+      <div style="background:#0B1E3D; padding:24px 32px;">
         <span style="display:inline-flex; align-items:center; gap:10px;">
-          <span style="display:inline-block; width:28px; height:28px; border-radius:9999px; background:#C0663E; color:#fff; font-weight:700; text-align:center; line-height:28px; font-size:14px;">G</span>
+          <span style="display:inline-block; width:28px; height:28px; border-radius:9999px; background:#C7430F; color:#fff; font-weight:700; text-align:center; line-height:28px; font-size:14px;">G</span>
           <span style="color:#ffffff; font-size:18px; font-weight:600;">Guedias</span>
         </span>
       </div>
       <div style="padding:32px;">
-        <h1 style="margin:0 0 16px; font-size:20px; color:#232320;">${title}</h1>
+        <h1 style="margin:0 0 16px; font-size:20px; color:#0E1726;">${title}</h1>
         ${bodyHtml}
       </div>
-      <div style="padding:20px 32px; background:#F7F5F1; font-size:12px; color:#8a8880;">
+      <div style="padding:20px 32px; background:#F1F5FA; font-size:12px; color:#76889F;">
         Guedias — objetos impressos em 3D, camada a camada.
       </div>
     </div>
@@ -63,15 +63,15 @@ function itemsTable(items: EmailOrderItem[]): string {
   const rows = items
     .map((item) => {
       const variant = [item.color, item.material].filter(Boolean).join(" · ");
-      const note = item.personalization ? `<br/><em style="color:#8a8880;">“${item.personalization}”</em>` : "";
+      const note = item.personalization ? `<br/><em style="color:#76889F;">“${item.personalization}”</em>` : "";
       return `
       <tr>
-        <td style="padding:8px 0; font-size:14px; color:#232320; border-bottom:1px solid #EFEBE4;">
+        <td style="padding:8px 0; font-size:14px; color:#0E1726; border-bottom:1px solid #E3EAF3;">
           ${item.qty}× ${item.name}
-          ${variant ? `<br/><span style="color:#8a8880; font-size:12px;">${variant}</span>` : ""}
+          ${variant ? `<br/><span style="color:#76889F; font-size:12px;">${variant}</span>` : ""}
           ${note}
         </td>
-        <td style="padding:8px 0; font-size:14px; color:#232320; text-align:right; white-space:nowrap; border-bottom:1px solid #EFEBE4;">
+        <td style="padding:8px 0; font-size:14px; color:#0E1726; text-align:right; white-space:nowrap; border-bottom:1px solid #E3EAF3;">
           ${formatPrice((item.price_cents * item.qty) / 100)}
         </td>
       </tr>`;
@@ -83,7 +83,7 @@ function itemsTable(items: EmailOrderItem[]): string {
 
 function totalsBlock(order: EmailOrder): string {
   return `
-  <table style="width:100%; border-collapse:collapse; font-size:14px; color:#5a5850;">
+  <table style="width:100%; border-collapse:collapse; font-size:14px; color:#3E4A5C;">
     <tr>
       <td style="padding:4px 0;">Subtotal</td>
       <td style="padding:4px 0; text-align:right;">${formatPrice(order.subtotal_cents / 100)}</td>
@@ -95,8 +95,8 @@ function totalsBlock(order: EmailOrder): string {
       </td>
     </tr>
     <tr>
-      <td style="padding:8px 0 0; font-weight:700; color:#232320; border-top:1px solid #EFEBE4;">Total</td>
-      <td style="padding:8px 0 0; font-weight:700; color:#232320; text-align:right; border-top:1px solid #EFEBE4;">
+      <td style="padding:8px 0 0; font-weight:700; color:#0E1726; border-top:1px solid #E3EAF3;">Total</td>
+      <td style="padding:8px 0 0; font-weight:700; color:#0E1726; text-align:right; border-top:1px solid #E3EAF3;">
         ${formatPrice(order.total_cents / 100)}
       </td>
     </tr>
@@ -120,14 +120,14 @@ export async function sendOrderConfirmationEmail(order: EmailOrder, items: Email
   const html = layout(
     "A tua encomenda foi confirmada",
     `
-    <p style="color:#5a5850; font-size:14px; line-height:1.6;">
+    <p style="color:#3E4A5C; font-size:14px; line-height:1.6;">
       Obrigada${order.shipping_name ? `, ${order.shipping_name.split(" ")[0]}` : ""}! Recebemos o teu
       pagamento e a encomenda <strong>#${order.id.slice(0, 8)}</strong> vai começar a ser impressa em
       breve na nossa Creality Hi Combo.
     </p>
     ${itemsTable(items)}
     ${totalsBlock(order)}
-    ${addressLine ? `<p style="margin-top:20px; font-size:13px; color:#8a8880;">A enviar para: ${addressLine}</p>` : ""}
+    ${addressLine ? `<p style="margin-top:20px; font-size:13px; color:#76889F;">A enviar para: ${addressLine}</p>` : ""}
     `
   );
 
@@ -175,10 +175,10 @@ export async function sendOrderStatusEmail(
   const html = layout(
     copy.title,
     `
-    <p style="color:#5a5850; font-size:14px; line-height:1.6;">
+    <p style="color:#3E4A5C; font-size:14px; line-height:1.6;">
       Olá${order.shipping_name ? `, ${order.shipping_name.split(" ")[0]}` : ""}. ${copy.message}
     </p>
-    <p style="color:#8a8880; font-size:13px; margin-top:16px;">Encomenda #${order.id.slice(0, 8)}</p>
+    <p style="color:#76889F; font-size:13px; margin-top:16px;">Encomenda #${order.id.slice(0, 8)}</p>
     `
   );
 

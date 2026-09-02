@@ -171,6 +171,12 @@ export default async function AdminOrderDetailPage({ params }: { params: { id: s
                 {[addr.postal_code, addr.city].filter(Boolean).join(" ")}
               </p>
             )}
+            <Link
+              href={`/admin/encomendas/${order.id}/etiqueta`}
+              className="btn-secondary mt-4 w-full"
+            >
+              Imprimir etiqueta de envio
+            </Link>
           </div>
 
           {(order.stripe_session_id || order.stripe_payment_intent) && (

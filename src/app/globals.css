@@ -2,18 +2,59 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─────────────────────────────────────────────────────────────
+   Paleta Guedias — azul-marinho + coral, sobre neutros frios.
+   Tudo em triplos RGB para o Tailwind (rgb(var(--x) / <alpha>)).
+   Ajusta os tons aqui e o site inteiro acompanha.
+   ───────────────────────────────────────────────────────────── */
 :root {
-  --font-sans: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
-  --font-display: Georgia, "Times New Roman", serif;
+  /* Azul-marinho — cor primária */
+  --c-navy-50: 237 242 250;
+  --c-navy-100: 213 224 240;
+  --c-navy-200: 173 195 224;
+  --c-navy-400: 60 97 166;
+  --c-navy-500: 34 68 127;
+  --c-navy-600: 18 47 90;
+  --c-navy-700: 11 30 61;
+  --c-navy-800: 8 22 46;
+  --c-navy-900: 5 14 30;
+
+  /* Coral — acento / CTA */
+  --c-coral-50: 253 240 234;
+  --c-coral-100: 250 220 206;
+  --c-coral-200: 242 184 155;
+  --c-coral-300: 233 143 99;
+  --c-coral-400: 223 103 51;
+  --c-coral-500: 199 67 15;
+  --c-coral-600: 166 54 12;
+  --c-coral-700: 131 43 11;
+  --c-coral-800: 92 32 9;
+  --c-coral-900: 57 21 6;
+
+  /* Neutros frios — fundo e texto */
+  --c-stone-25: 248 250 252;
+  --c-stone-50: 241 245 250;
+  --c-stone-100: 227 234 243;
+  --c-stone-200: 205 215 228;
+  --c-stone-300: 168 183 203;
+  --c-stone-400: 118 136 160;
+  --c-stone-500: 85 98 119;
+  --c-stone-600: 62 74 92;
+  --c-stone-700: 44 53 70;
+  --c-stone-800: 27 35 49;
+  --c-stone-900: 14 23 38;
 }
+
+/* --font-sans e --font-display são definidas por next/font em <html>
+   (ver layout.tsx). O tailwind.config já inclui uma pilha de fallback. */
 
 html {
   scroll-behavior: smooth;
 }
 
 body {
-  background-color: #fbfaf8;
-  color: #232320;
+  background-color: rgb(var(--c-stone-25));
+  color: rgb(var(--c-stone-900));
 }
 
 @layer components {
@@ -22,23 +63,25 @@ body {
   }
 
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-medium tracking-wide transition-all duration-200;
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-medium tracking-wide transition-all duration-200 ease-out;
   }
 
+  /* CTA principal — coral */
   .btn-primary {
-    @apply btn bg-clay-500 text-white shadow-soft hover:bg-clay-600 active:scale-[0.98];
+    @apply btn bg-clay-500 text-white shadow-soft hover:-translate-y-0.5 hover:bg-clay-600 hover:shadow-lift active:translate-y-0 active:scale-[0.97];
   }
 
   .btn-secondary {
-    @apply btn bg-white text-stone-900 border border-clay-900/10 hover:border-clay-500/40 hover:bg-clay-50 active:scale-[0.98];
+    @apply btn border border-pine-900/15 bg-white text-pine-800 hover:-translate-y-0.5 hover:border-pine-700/40 hover:bg-pine-50 active:translate-y-0 active:scale-[0.97];
   }
 
+  /* Azul-marinho — alternativa sóbria ao coral */
   .btn-dark {
-    @apply btn bg-pine-700 text-white hover:bg-pine-600 active:scale-[0.98];
+    @apply btn bg-pine-700 text-white hover:-translate-y-0.5 hover:bg-pine-600 hover:shadow-lift active:translate-y-0 active:scale-[0.97];
   }
 
   .btn-ghost {
-    @apply btn bg-transparent text-stone-900 hover:bg-black/5 active:scale-[0.98];
+    @apply btn bg-transparent text-pine-800 hover:bg-pine-900/[0.06] active:scale-[0.97];
   }
 
   .section {
@@ -50,11 +93,11 @@ body {
   }
 
   .card {
-    @apply rounded-xl2 bg-white shadow-soft transition-shadow duration-200;
+    @apply rounded-xl2 border border-pine-900/[0.06] bg-white shadow-soft transition-all duration-200;
   }
 
   .input {
-    @apply w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-sm text-stone-900 placeholder:text-stone-900/40 focus:border-clay-500 focus:outline-none focus:ring-2 focus:ring-clay-500/20;
+    @apply w-full rounded-xl border border-pine-900/15 bg-white px-4 py-3 text-sm text-stone-900 placeholder:text-stone-900/40 focus:border-clay-500 focus:outline-none focus:ring-2 focus:ring-clay-500/25;
   }
 
   .label {
@@ -62,7 +105,40 @@ body {
   }
 }
 
+@layer utilities {
+  /* Reveal editorial nos cartões de produto (imagem faz zoom no hover). */
+  .media-zoom {
+    @apply transition-transform duration-[600ms] ease-out will-change-transform;
+  }
+  .group:hover .media-zoom {
+    transform: scale(1.06);
+  }
+}
+
 ::selection {
-  background-color: #eab99c;
-  color: #3d1d12;
+  background-color: rgb(var(--c-navy-200));
+  color: rgb(var(--c-navy-800));
+}
+
+/* Cursor personalizado: esconde o cursor nativo só quando o seguidor
+   está ativo (ponteiro fino + sem prefers-reduced-motion). Mantém o
+   cursor de texto em campos editáveis. */
+@media (pointer: fine) {
+  body[data-cursor="on"],
+  body[data-cursor="on"] a,
+  body[data-cursor="on"] button,
+  body[data-cursor="on"] [role="button"] {
+    cursor: none;
+  }
+  body[data-cursor="on"] input,
+  body[data-cursor="on"] textarea,
+  body[data-cursor="on"] select,
+  body[data-cursor="on"] [contenteditable="true"] {
+    cursor: auto;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }

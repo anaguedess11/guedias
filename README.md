@@ -165,6 +165,7 @@ src/
       actions.ts                  → Server Actions (criar/editar/apagar produto)
       encomendas/page.tsx          → Lista de encomendas + mudar estado
       encomendas/[id]/page.tsx     → Detalhe da encomenda + ações
+      encomendas/[id]/etiqueta/    → Etiqueta de envio otimizada para impressão (100×150 mm)
       encomendas/actions.ts        → Server Actions (estado, cancelar, reembolsar, notas, morada, reenviar email)
       calculadora/page.tsx         → Calculadora de preço justo (só no browser)
     api/checkout/route.ts         → Cria a sessão de pagamento Stripe
@@ -224,6 +225,11 @@ middleware.ts                     → Refresca a sessão Supabase em cada pedido
 - `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY` e `RESEND_API_KEY` nunca
   devem ter o prefixo `NEXT_PUBLIC_` nem ser expostas ao browser — só são
   usadas em Route Handlers e Server Actions (servidor).
+- **Paleta:** azul-marinho (`pine`) + coral (`clay`) sobre neutros frios
+  (`stone`). Todos os tons vivem como variáveis CSS em `src/app/globals.css`
+  (`:root`, triplos RGB) e são mapeados para o Tailwind em `tailwind.config.ts`
+  — mudas um tom num sítio e o site inteiro acompanha. Tipografia: Fraunces
+  (títulos) + Inter (texto), via `next/font` em `src/app/layout.tsx`.
 
 ## Próximos passos sugeridos
 

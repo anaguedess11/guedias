@@ -80,7 +80,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
           </p>
 
           <div className="mt-5 flex items-baseline gap-3">
-            <span className="font-display text-2xl font-semibold text-stone-900">
+            <span className="font-display text-2xl font-semibold text-clay-600">
               {formatPrice(product.price)}
             </span>
             <span className="text-xs text-stone-900/45">

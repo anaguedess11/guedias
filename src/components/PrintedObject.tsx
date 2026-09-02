@@ -25,8 +25,8 @@ export function PrintedObject({
       style={{
         background: `radial-gradient(120% 100% at 50% 0%, ${hexToRgba(
           color,
-          0.14
-        )}, transparent 70%), linear-gradient(180deg, #FBFAF8 0%, #F2EEE7 100%)`,
+          0.16
+        )}, transparent 70%), linear-gradient(180deg, #F8FAFC 0%, #E7EDF5 100%)`,
       }}
     >
       <div
