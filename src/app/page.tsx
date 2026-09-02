@@ -3,6 +3,7 @@ import { getFeaturedProducts } from "@/lib/data/products";
 import { categories } from "@/data/categories";
 import { ProductCard } from "@/components/ProductCard";
 import { PrintedObject } from "@/components/PrintedObject";
+import { PrintProcessScroll } from "@/components/PrintProcessScroll";
 
 const PROCESS_STEPS = [
   {
@@ -25,6 +26,7 @@ const PROCESS_STEPS = [
 
 export default async function HomePage() {
   const featured = await getFeaturedProducts();
+  const showcaseName = featured[0]?.name ?? "um objeto Guedias";
 
   return (
     <div>
@@ -78,6 +80,9 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Do ficheiro ao objeto — animação controlada pelo scroll */}
+      <PrintProcessScroll productName={showcaseName} />
 
       {/* Categorias */}
       <section className="section">
