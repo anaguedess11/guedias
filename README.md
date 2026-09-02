@@ -90,9 +90,15 @@ Já tens o Supabase configurado (secção 2)? Falta só tornares-te administrado
      (select id from auth.users where email = 'o-teu-email@exemplo.com');
    ```
 4. Volta a entrar no site (ou recarrega a página) — aparece um link **Admin**
-   no menu, que leva a `/admin`: lista de produtos, com criar/editar/apagar,
-   tudo por formulário (nome, preço, categoria, cores, materiais,
-   personalização, foto opcional por URL, etc. — nada de SQL manual).
+   no menu, que leva a `/admin`: **Painel** (métricas), **Produtos**
+   (criar/editar/apagar por formulário — nome, preço, categoria, cores,
+   materiais, personalização, foto, etc., sem SQL manual), **Encomendas** e
+   **Calculadora**.
+5. Para **carregar fotografias** dos produtos (em vez de colar um URL), corre
+   [`supabase/migrations/0005_product_images_storage.sql`](supabase/migrations/0005_product_images_storage.sql)
+   no SQL Editor — cria o bucket de Storage `product-images` (público para
+   leitura, escrita só para admins). Sem isto, o botão "Carregar foto" dá erro
+   mas o campo "colar um URL externo" continua a funcionar.
 
 Só contas com `is_admin = true` conseguem escrever na tabela `products` —
 é uma regra da própria base de dados (Row Level Security), não só da
@@ -159,8 +165,9 @@ src/
     conta/entrar, conta/registar  → Login e registo (Supabase Auth)
     conta/page.tsx                → Perfil + histórico de encomendas
     admin/                        → Painel de administração (só is_admin=true)
-      page.tsx                    → Lista de produtos (editar/apagar)
-      produtos/novo/               → Criar produto
+      page.tsx                    → Painel: receita, encomendas por estado, mais vendidos, vendas/mês
+      produtos/page.tsx            → Lista de produtos (editar/apagar)
+      produtos/novo/               → Criar produto (com upload de foto p/ Supabase Storage)
       produtos/[id]/editar/        → Editar produto
       actions.ts                  → Server Actions (criar/editar/apagar produto)
       encomendas/page.tsx          → Lista de encomendas + mudar estado
@@ -183,6 +190,7 @@ supabase/
   migrations/0002_admin_products.sql   → Incremento: admin + foto por URL
   migrations/0003_order_fulfillment.sql → Incremento: estado de produção/envio
   migrations/0004_order_admin_actions.sql → Incremento: notas, reembolsos, estado "refunded"
+  migrations/0005_product_images_storage.sql → Incremento: bucket de Storage p/ fotos de produtos
   seed.sql                        → Categorias e 18 produtos fictícios
 middleware.ts                     → Refresca a sessão Supabase em cada pedido
 ```

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { categories } from "@/data/categories";
 import { Product, ProductColor, ProductWriteInput } from "@/lib/types";
 import { createProduct, updateProduct } from "@/app/admin/actions";
+import { ImageUploadField } from "@/components/ImageUploadField";
 
 const PROFILE_PRESETS: { label: string; profile: number[] }[] = [
   { label: "Vaso", profile: [0.34, 0.48, 0.62, 0.78, 0.88, 0.8, 0.62, 0.46, 0.55, 0.66] },
@@ -132,7 +133,7 @@ export function ProductForm({ product }: { product?: Product }) {
       setError(result.error);
       return;
     }
-    router.push("/admin");
+    router.push("/admin/produtos");
     router.refresh();
   }
 
@@ -272,19 +273,11 @@ export function ProductForm({ product }: { product?: Product }) {
           </button>
         </div>
 
-        <div>
-          <label className="label">Foto (URL, opcional)</label>
-          <input
-            className="input"
-            placeholder="https://..."
-            value={form.imageUrl}
-            onChange={(e) => set("imageUrl", e.target.value)}
-          />
-          <p className="mt-1.5 text-xs text-stone-900/45">
-            Sem foto, mostra-se a silhueta gerada automaticamente a partir da cor e da "silhueta"
-            abaixo.
-          </p>
-        </div>
+        <ImageUploadField
+          value={form.imageUrl}
+          onChange={(url) => set("imageUrl", url)}
+          slug={form.slug || form.name}
+        />
       </div>
 
       <div className="card space-y-4 p-6">
@@ -393,7 +386,7 @@ export function ProductForm({ product }: { product?: Product }) {
         <button type="submit" disabled={saving} className="btn-primary">
           {saving ? "A guardar…" : isEdit ? "Guardar alterações" : "Criar produto"}
         </button>
-        <button type="button" onClick={() => router.push("/admin")} className="btn-ghost">
+        <button type="button" onClick={() => router.push("/admin/produtos")} className="btn-ghost">
           Cancelar
         </button>
       </div>

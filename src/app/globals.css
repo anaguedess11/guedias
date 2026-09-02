@@ -120,23 +120,6 @@ body {
   color: rgb(var(--c-navy-800));
 }
 
-/* Cursor personalizado: esconde o cursor nativo só quando o seguidor
-   está ativo (ponteiro fino + sem prefers-reduced-motion). Mantém o
-   cursor de texto em campos editáveis. */
-@media (pointer: fine) {
-  body[data-cursor="on"],
-  body[data-cursor="on"] a,
-  body[data-cursor="on"] button,
-  body[data-cursor="on"] [role="button"] {
-    cursor: none;
-  }
-  body[data-cursor="on"] input,
-  body[data-cursor="on"] textarea,
-  body[data-cursor="on"] select,
-  body[data-cursor="on"] [contenteditable="true"] {
-    cursor: auto;
-  }
-}
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

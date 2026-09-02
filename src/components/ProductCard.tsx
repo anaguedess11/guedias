@@ -10,7 +10,6 @@ export function ProductCard({ product }: { product: Product }) {
   return (
     <Link
       href={`/produto/${product.slug}`}
-      data-cursor="view"
       className="card group block overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-card"
     >
       <div className="relative aspect-[4/5] w-full overflow-hidden">

@@ -4,7 +4,6 @@ import "./globals.css";
 import { CartProvider } from "@/components/CartProvider";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { CustomCursor } from "@/components/CustomCursor";
 import { SupabaseSetupNotice } from "@/components/SupabaseSetupNotice";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getCurrentUser } from "@/lib/auth";
@@ -42,7 +41,6 @@ export default async function RootLayout({
       <body className="flex min-h-screen flex-col font-sans antialiased">
         <CartProvider>
           {!isSupabaseConfigured && <SupabaseSetupNotice />}
-          <CustomCursor />
           <Header user={user ? { email: user.email, isAdmin: user.isAdmin } : null} />
           <main className="flex-1">{children}</main>
           <Footer />

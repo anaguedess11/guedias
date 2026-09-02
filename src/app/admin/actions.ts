@@ -55,6 +55,7 @@ export async function createProduct(input: ProductWriteInput): Promise<ActionRes
   }
 
   revalidatePath("/admin");
+  revalidatePath("/admin/produtos");
   revalidatePath("/loja");
   revalidatePath("/");
   revalidatePath(`/produto/${input.slug}`);
@@ -87,6 +88,7 @@ export async function updateProduct(
   }
 
   revalidatePath("/admin");
+  revalidatePath("/admin/produtos");
   revalidatePath("/loja");
   revalidatePath("/");
   revalidatePath(`/produto/${input.slug}`);
@@ -119,6 +121,7 @@ export async function deleteProduct(id: string): Promise<ActionResult> {
   }
 
   revalidatePath("/admin");
+  revalidatePath("/admin/produtos");
   revalidatePath("/loja");
   revalidatePath("/");
   if (product) revalidatePath(`/produto/${product.slug}`);
