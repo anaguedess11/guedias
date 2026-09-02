@@ -129,7 +129,8 @@ create table if not exists orders (
   user_id uuid references auth.users (id),
   stripe_session_id text unique,
   stripe_payment_intent text,
-  status text not null default 'pending' check (status in ('pending', 'paid', 'failed', 'canceled')),
+  status text not null default 'pending'
+    check (status in ('pending', 'paid', 'failed', 'canceled', 'refunded')),
   -- Estado de produção/envio, distinto do estado de pagamento acima.
   -- Só avança manualmente, a partir de /admin/encomendas.
   fulfillment_status text not null default 'not_started'
@@ -141,7 +142,10 @@ create table if not exists orders (
   subtotal_cents integer not null,
   shipping_cents integer not null,
   total_cents integer not null,
+  refunded_cents integer not null default 0,
   currency text not null default 'eur',
+  -- Notas internas visíveis apenas em /admin/encomendas.
+  admin_notes text,
   created_at timestamptz not null default now()
 );
 

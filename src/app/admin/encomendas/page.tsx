@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatPrice } from "@/lib/format";
 import { OrderStatusSelect } from "@/components/OrderStatusSelect";
@@ -19,7 +20,7 @@ interface OrderItemRow {
 interface OrderRow {
   id: string;
   email: string;
-  status: "pending" | "paid" | "failed" | "canceled";
+  status: "pending" | "paid" | "failed" | "canceled" | "refunded";
   fulfillment_status: "not_started" | "in_production" | "shipped" | "delivered";
   total_cents: number;
   created_at: string;
@@ -32,6 +33,7 @@ const PAYMENT_STATUS_LABEL: Record<OrderRow["status"], string> = {
   paid: "Pago",
   failed: "Falhou",
   canceled: "Cancelada",
+  refunded: "Reembolsada",
 };
 
 export default async function AdminOrdersPage() {
@@ -62,9 +64,12 @@ export default async function AdminOrdersPage() {
             <div key={order.id} className="card p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="text-sm font-medium text-stone-900">
+                  <Link
+                    href={`/admin/encomendas/${order.id}`}
+                    className="text-sm font-medium text-stone-900 hover:text-clay-700"
+                  >
                     #{order.id.slice(0, 8)} · {order.shipping_name ?? order.email}
-                  </p>
+                  </Link>
                   <p className="mt-0.5 text-xs text-stone-900/45">
                     {new Date(order.created_at).toLocaleDateString("pt-PT", {
                       day: "2-digit",
@@ -83,12 +88,14 @@ export default async function AdminOrdersPage() {
                         ? "bg-pine-50 text-pine-600"
                         : order.status === "failed"
                         ? "bg-red-50 text-red-600"
+                        : order.status === "refunded"
+                        ? "bg-amber-50 text-amber-700"
                         : "bg-black/5 text-stone-900/50"
                     }`}
                   >
                     {PAYMENT_STATUS_LABEL[order.status]}
                   </span>
-                  {order.status === "paid" && (
+                  {(order.status === "paid" || order.status === "refunded") && (
                     <OrderStatusSelect orderId={order.id} status={order.fulfillment_status} />
                   )}
                 </div>

@@ -17,7 +17,7 @@ type FulfillmentStatus = "not_started" | "in_production" | "shipped" | "delivere
 
 interface OrderRow {
   id: string;
-  status: "pending" | "paid" | "failed" | "canceled";
+  status: "pending" | "paid" | "failed" | "canceled" | "refunded";
   fulfillment_status: FulfillmentStatus;
   total_cents: number;
   currency: string;
@@ -31,6 +31,7 @@ const STATUS_LABEL: Record<OrderRow["status"], string> = {
   paid: "Pago",
   failed: "Falhou",
   canceled: "Cancelada",
+  refunded: "Reembolsada",
 };
 
 const STATUS_STYLE: Record<OrderRow["status"], string> = {
@@ -38,6 +39,7 @@ const STATUS_STYLE: Record<OrderRow["status"], string> = {
   paid: "bg-pine-50 text-pine-600",
   failed: "bg-red-50 text-red-600",
   canceled: "bg-black/5 text-stone-900/50",
+  refunded: "bg-amber-50 text-amber-700",
 };
 
 const FULFILLMENT_LABEL: Record<FulfillmentStatus, string> = {

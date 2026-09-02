@@ -117,6 +117,11 @@ entregue) são enviadas por email via [Resend](https://resend.com).
    ao endereço que usaste no Stripe Checkout. Em `/admin/encomendas`, muda o
    estado de uma encomenda paga para "Em produção", "Enviada" ou "Entregue"
    — cada mudança envia um novo email ao cliente.
+6. Se já tinhas a base de dados criada antes desta funcionalidade, corre
+   também [`supabase/migrations/0004_order_admin_actions.sql`](supabase/migrations/0004_order_admin_actions.sql).
+   Clica no número de uma encomenda para abrir o detalhe: aí podes cancelar,
+   reembolsar via Stripe (total ou parcial), editar a morada de envio, deixar
+   notas internas e reenviar o email de confirmação.
 
 Sem `RESEND_API_KEY` configurada, a loja continua a funcionar normalmente —
 só não envia emails (fica um aviso na consola do servidor).
@@ -159,7 +164,9 @@ src/
       produtos/[id]/editar/        → Editar produto
       actions.ts                  → Server Actions (criar/editar/apagar produto)
       encomendas/page.tsx          → Lista de encomendas + mudar estado
-      encomendas/actions.ts        → Server Action (muda estado + envia email)
+      encomendas/[id]/page.tsx     → Detalhe da encomenda + ações
+      encomendas/actions.ts        → Server Actions (estado, cancelar, reembolsar, notas, morada, reenviar email)
+      calculadora/page.tsx         → Calculadora de preço justo (só no browser)
     api/checkout/route.ts         → Cria a sessão de pagamento Stripe
     api/webhooks/stripe/route.ts  → Regista a encomenda paga + email de confirmação
   components/                     → Header, Footer, carrinho, ProductForm, etc.
@@ -174,6 +181,7 @@ supabase/
   schema.sql                      → Tabelas + Row Level Security (versão completa)
   migrations/0002_admin_products.sql   → Incremento: admin + foto por URL
   migrations/0003_order_fulfillment.sql → Incremento: estado de produção/envio
+  migrations/0004_order_admin_actions.sql → Incremento: notas, reembolsos, estado "refunded"
   seed.sql                        → Categorias e 18 produtos fictícios
 middleware.ts                     → Refresca a sessão Supabase em cada pedido
 ```
@@ -209,6 +217,10 @@ middleware.ts                     → Refresca a sessão Supabase em cada pedido
   interface. Ver secção 4 para te tornares administradora.
 - Envio limitado a Portugal por agora (`shipping_address_collection` em
   `src/app/api/checkout/route.ts`) — fácil de alargar a mais países.
+- A **calculadora de preço** (`/admin/calculadora`) é só uma ferramenta de
+  apoio — não escreve nada na base de dados. Os valores (preço do filamento,
+  eletricidade, valor à hora, etc.) ficam guardados no `localStorage` do teu
+  navegador.
 - `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY` e `RESEND_API_KEY` nunca
   devem ter o prefixo `NEXT_PUBLIC_` nem ser expostas ao browser — só são
   usadas em Route Handlers e Server Actions (servidor).
