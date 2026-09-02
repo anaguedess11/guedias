@@ -2,11 +2,9 @@
 
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 export default function EntrarPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -20,13 +18,16 @@ export default function EntrarPage() {
     const supabase = createClient();
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
 
-    setLoading(false);
     if (signInError) {
+      setLoading(false);
       setError(traduzirErro(signInError.message));
       return;
     }
-    router.refresh();
-    router.push("/conta");
+
+    // Navegação "dura" — garante que o servidor volta a renderizar com a
+    // sessão nova (Header, links de admin, RLS) sem o utilizador ter de
+    // atualizar a página manualmente.
+    window.location.assign("/conta");
   }
 
   return (

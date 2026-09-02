@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -14,7 +13,6 @@ export function AuthMenu({
   variant?: "desktop" | "mobile";
   onNavigate?: () => void;
 }) {
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   async function handleSignOut() {
@@ -22,8 +20,7 @@ export function AuthMenu({
     const supabase = createClient();
     await supabase.auth.signOut();
     onNavigate?.();
-    router.refresh();
-    router.push("/");
+    window.location.assign("/");
   }
 
   if (variant === "mobile") {

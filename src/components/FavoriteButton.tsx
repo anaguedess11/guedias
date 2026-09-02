@@ -12,7 +12,7 @@ export function FavoriteButton({
   /** "overlay" — botão redondo sobre a imagem; "inline" — com etiqueta de texto */
   variant?: "overlay" | "inline";
 }) {
-  const { isFavorite, toggle, ready } = useFavorites();
+  const { isFavorite, toggle } = useFavorites();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const fav = isFavorite(productId);
@@ -46,7 +46,7 @@ export function FavoriteButton({
       <button
         type="button"
         onClick={handleClick}
-        disabled={!ready || busy}
+        disabled={busy}
         aria-pressed={fav}
         className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 ${
           fav
@@ -64,11 +64,11 @@ export function FavoriteButton({
     <button
       type="button"
       onClick={handleClick}
-      disabled={!ready || busy}
+      disabled={busy}
       aria-label={fav ? "Remover dos favoritos" : "Adicionar aos favoritos"}
       aria-pressed={fav}
-      className={`absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full shadow-soft backdrop-blur transition-colors ${
-        fav ? "bg-white text-clay-600" : "bg-white/85 text-stone-900/55 hover:text-clay-600"
+      className={`absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full shadow-soft backdrop-blur transition-colors disabled:opacity-60 ${
+        fav ? "bg-white text-clay-600" : "bg-white/90 text-stone-900/55 hover:text-clay-600"
       }`}
     >
       {heart}
