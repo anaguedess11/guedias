@@ -17,10 +17,31 @@ export function AuthMenu({
 
   async function handleSignOut() {
     setLoading(true);
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    onNavigate?.();
-    window.location.assign("/");
+    try {
+      const supabase = createClient();
+      // O cliente Supabase pode ficar preso indefinidamente a tentar
+      // adquirir o lock interno do token de sessão (bug conhecido do
+      // supabase-js em certas condições de rede) sem nunca resolver nem
+      // rejeitar — por isso nunca esperamos por ele sem limite de tempo.
+      await Promise.race([
+        supabase.auth.signOut({ scope: "local" }),
+        new Promise((resolve) => setTimeout(resolve, 2000)),
+      ]);
+    } catch (err) {
+      console.error("[guedias] erro ao terminar sessão:", err);
+    } finally {
+      // Rede de segurança: garante que o cookie de sessão desaparece mesmo
+      // que a chamada acima falhe silenciosamente por algum motivo.
+      document.cookie
+        .split(";")
+        .map((c) => c.trim().split("=")[0])
+        .filter((name) => name.startsWith("sb-"))
+        .forEach((name) => {
+          document.cookie = `${name}=; Max-Age=0; path=/`;
+        });
+      onNavigate?.();
+      window.location.assign("/");
+    }
   }
 
   if (variant === "mobile") {
