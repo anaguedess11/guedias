@@ -13,7 +13,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Neutros frios — corpo do site (era bege quente).
+        // Neutros quentes — corpo do site, a par do branco do logótipo.
         stone: {
           25: withVar("--c-stone-25"),
           50: withVar("--c-stone-50"),
@@ -27,7 +27,7 @@ const config: Config = {
           800: withVar("--c-stone-800"),
           900: withVar("--c-stone-900"),
         },
-        // Cor primária — azul-marinho profundo (era verde "pine").
+        // Cor primária — grafite, tirada do texto do logótipo (era azul-marinho).
         pine: {
           50: withVar("--c-navy-50"),
           100: withVar("--c-navy-100"),
@@ -39,7 +39,7 @@ const config: Config = {
           800: withVar("--c-navy-800"),
           900: withVar("--c-navy-900"),
         },
-        // Cor de acento / CTA — coral quente que contrasta com o azul (era terracota "clay").
+        // Cor de acento / CTA — cobre, tirada da barra do logótipo (era coral).
         clay: {
           50: withVar("--c-coral-50"),
           100: withVar("--c-coral-100"),

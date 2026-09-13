@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { formatPrice } from "@/lib/format";
 import { OrderStatusSelect } from "@/components/OrderStatusSelect";
 import { AdminFilters } from "@/components/AdminFilters";
+import { PAYMENT_METHOD_LABEL, isPaymentMethod } from "@/lib/payment-details";
 
 export const metadata: Metadata = {
   title: "Encomendas — Guedias",
@@ -22,6 +23,7 @@ interface OrderRow {
   id: string;
   email: string;
   status: "pending" | "paid" | "failed" | "canceled" | "refunded";
+  payment_method: string;
   fulfillment_status: "not_started" | "in_production" | "shipped" | "delivered";
   total_cents: number;
   created_at: string;
@@ -48,7 +50,7 @@ export default async function AdminOrdersPage({
   const { data } = await supabase
     .from("orders")
     .select(
-      "id, email, status, fulfillment_status, total_cents, created_at, shipping_name, order_items(name, qty, price_cents, color, material, personalization)"
+      "id, email, status, payment_method, fulfillment_status, total_cents, created_at, shipping_name, order_items(name, qty, price_cents, color, material, personalization)"
     )
     .order("created_at", { ascending: false })
     .returns<OrderRow[]>();
@@ -162,6 +164,11 @@ export default async function AdminOrdersPage({
                     }`}
                   >
                     {PAYMENT_STATUS_LABEL[order.status]}
+                  </span>
+                  <span className="rounded-full bg-black/5 px-3 py-1 text-xs font-medium text-stone-900/50">
+                    {isPaymentMethod(order.payment_method)
+                      ? PAYMENT_METHOD_LABEL[order.payment_method]
+                      : order.payment_method}
                   </span>
                   {order.status === "paid" || order.status === "refunded" ? (
                     <OrderStatusSelect orderId={order.id} status={order.fulfillment_status} />

@@ -7,7 +7,7 @@ import { supabaseUrl } from "@/lib/supabase/env";
  * NUNCA importar isto num componente cliente ("use client") nem expor
  * SUPABASE_SERVICE_ROLE_KEY com o prefixo NEXT_PUBLIC_. Usar apenas em
  * Route Handlers e código que corre exclusivamente no servidor (ex.:
- * o webhook do Stripe, que precisa de escrever encomendas ignorando RLS).
+ * o endpoint de checkout, que precisa de escrever encomendas ignorando RLS).
  */
 export function createAdminClient() {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

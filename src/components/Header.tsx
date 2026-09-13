@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -24,13 +25,15 @@ export function Header({
   return (
     <header className="sticky top-0 z-40 border-b border-black/5 bg-stone-25/90 backdrop-blur">
       <div className="container-page flex h-16 items-center justify-between sm:h-20">
-        <Link href="/" className="flex items-center gap-2.5" onClick={() => setOpen(false)}>
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-clay-500 font-display text-base font-bold text-white">
-            G
-          </span>
-          <span className="font-display text-xl font-semibold tracking-tight text-stone-900">
-            Guedias
-          </span>
+        <Link href="/" className="flex items-center" onClick={() => setOpen(false)}>
+          <Image
+            src="/logo-wordmark.png"
+            alt="Guedias"
+            width={821}
+            height={184}
+            priority
+            className="h-8 w-auto sm:h-9"
+          />
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex">

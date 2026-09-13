@@ -15,7 +15,7 @@ export function ProductCard({ product }: { product: Product }) {
           <ProductVisual
             imageUrl={product.imageUrl}
             profile={product.profile}
-            color={product.colors[0]?.hex ?? "#C7430F"}
+            color={product.colors[0]?.hex ?? "#A97464"}
             className="media-zoom h-full w-full"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-pine-900/45 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />

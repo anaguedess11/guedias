@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { categories } from "@/data/categories";
 
@@ -6,11 +7,14 @@ export function Footer() {
     <footer className="border-t border-black/5 bg-white">
       <div className="container-page grid gap-10 py-14 sm:grid-cols-2 md:grid-cols-4">
         <div className="sm:col-span-2 md:col-span-1">
-          <Link href="/" className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-clay-500 font-display text-base font-bold text-white">
-              G
-            </span>
-            <span className="font-display text-xl font-semibold text-stone-900">Guedias</span>
+          <Link href="/" className="flex items-center">
+            <Image
+              src="/logo-full.png"
+              alt="Guedias — imprime a tua ideia"
+              width={819}
+              height={290}
+              className="h-14 w-auto"
+            />
           </Link>
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-stone-900/60">
             Objetos impressos em 3D, camada a camada, numa Creality Hi Combo.

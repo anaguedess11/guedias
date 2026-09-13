@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { formatPrice } from "@/lib/format";
 import {
   cancelOrder,
-  refundOrder,
+  markOrderPaid,
+  registerRefund,
   resendConfirmationEmail,
   saveOrderNotes,
   updateOrderShipping,
@@ -17,7 +18,6 @@ interface OrderActionsProps {
     status: "pending" | "paid" | "failed" | "canceled" | "refunded";
     total_cents: number;
     refunded_cents: number;
-    hasPaymentIntent: boolean;
     admin_notes: string;
     shipping_name: string;
     line1: string;
@@ -46,10 +46,7 @@ export function OrderActions({ order }: OrderActionsProps) {
   const [refundAmount, setRefundAmount] = useState("");
 
   const remainingCents = order.total_cents - order.refunded_cents;
-  const canRefund =
-    order.hasPaymentIntent &&
-    (order.status === "paid" || order.status === "canceled") &&
-    remainingCents > 0;
+  const canRefund = (order.status === "paid" || order.status === "canceled") && remainingCents > 0;
 
   async function run(key: string, fn: () => Promise<{ error?: string; ok?: boolean }>, okMsg: string) {
     setBusy(key);
@@ -82,6 +79,20 @@ export function OrderActions({ order }: OrderActionsProps) {
           </p>
         )}
 
+        {order.status === "pending" && (
+          <button
+            type="button"
+            disabled={busy !== null}
+            onClick={() => {
+              if (!window.confirm("Confirmas que o pagamento (MB WAY ou transferência) já foi recebido?")) return;
+              run("markPaid", () => markOrderPaid(order.id), "Encomenda marcada como paga.");
+            }}
+            className="btn-primary w-full"
+          >
+            {busy === "markPaid" ? "A confirmar…" : "Marcar como paga"}
+          </button>
+        )}
+
         <button
           type="button"
           disabled={busy !== null}
@@ -112,7 +123,8 @@ export function OrderActions({ order }: OrderActionsProps) {
         <div className="card space-y-3 p-5">
           <h2 className="text-sm font-semibold text-stone-900">Reembolso</h2>
           <p className="text-xs text-stone-900/55">
-            Disponível para reembolso: <strong>{formatPrice(remainingCents / 100)}</strong>
+            Por reembolsar (fora da app, por MB WAY ou transferência):{" "}
+            <strong>{formatPrice(remainingCents / 100)}</strong>
             {order.refunded_cents > 0 && (
               <> (já reembolsado {formatPrice(order.refunded_cents / 100)})</>
             )}
@@ -139,16 +151,16 @@ export function OrderActions({ order }: OrderActionsProps) {
                 return;
               }
               const label = euros !== null ? formatPrice(euros) : formatPrice(remainingCents / 100);
-              if (!window.confirm(`Reembolsar ${label} no Stripe?`)) return;
+              if (!window.confirm(`Confirmas que já devolveste ${label} ao cliente (MB WAY/transferência)?`)) return;
               run(
                 "refund",
-                () => refundOrder(order.id, euros !== null ? Math.round(euros * 100) : undefined),
-                "Reembolso processado no Stripe."
+                () => registerRefund(order.id, euros !== null ? Math.round(euros * 100) : undefined),
+                "Reembolso registado."
               ).then((ok) => ok && setRefundAmount(""));
             }}
             className="btn-primary w-full"
           >
-            {busy === "refund" ? "A reembolsar…" : "Reembolsar via Stripe"}
+            {busy === "refund" ? "A registar…" : "Registar reembolso"}
           </button>
         </div>
       )}

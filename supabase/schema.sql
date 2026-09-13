@@ -61,13 +61,12 @@ create table if not exists profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   full_name text,
   phone text,
-  -- Morada de envio guardada — pré-preenche o checkout (via cliente Stripe).
+  -- Morada de envio guardada — pré-preenche o formulário de checkout.
   shipping_name text,
   shipping_line1 text,
   shipping_line2 text,
   shipping_postal_code text,
   shipping_city text,
-  stripe_customer_id text,
   is_admin boolean not null default false,
   created_at timestamptz not null default now()
 );
@@ -134,10 +133,13 @@ create policy "admins podem apagar produtos"
 create table if not exists orders (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references auth.users (id),
-  stripe_session_id text unique,
-  stripe_payment_intent text,
+  -- "pending" = aguarda confirmação manual do pagamento (MB WAY ou
+  -- transferência bancária); só avança para "paid" quando um admin
+  -- confirma a receção em /admin/encomendas — não há gateway automático.
   status text not null default 'pending'
     check (status in ('pending', 'paid', 'failed', 'canceled', 'refunded')),
+  payment_method text not null default 'transferencia'
+    check (payment_method in ('mbway', 'transferencia')),
   -- Estado de produção/envio, distinto do estado de pagamento acima.
   -- Só avança manualmente, a partir de /admin/encomendas.
   fulfillment_status text not null default 'not_started'
@@ -165,8 +167,9 @@ create policy "utilizador vê as próprias encomendas"
   using (auth.uid() = user_id);
 
 -- Não há policies de insert/update/delete: as encomendas só são escritas
--- pelo webhook do Stripe e atualizadas a partir de /admin, ambos usando a
--- service role key (ignora RLS) com verificação de administrador na app.
+-- pelo endpoint de checkout (/api/checkout) e atualizadas a partir de
+-- /admin, ambos usando a service role key (ignora RLS), esta última com
+-- verificação de administrador na app.
 
 -- ─────────────────────────────────────────────────────────────
 -- Itens da encomenda

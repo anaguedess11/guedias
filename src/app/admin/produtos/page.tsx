@@ -138,7 +138,7 @@ export default async function AdminProductsPage({
               ) : (
                 <PrintedObject
                   profile={product.profile}
-                  color={product.colors[0]?.hex ?? "#C7430F"}
+                  color={product.colors[0]?.hex ?? "#A97464"}
                   className="h-16 w-16 shrink-0 rounded-lg"
                 />
               )}

@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
-import { getSiteUrl, getStripe, isStripeConfigured } from "@/lib/stripe";
+import { isPaymentMethod } from "@/lib/payment-details";
+import { sendOrderReceivedEmail } from "@/lib/email";
 
 const FREE_SHIPPING_THRESHOLD_CENTS = 3500;
 const STANDARD_SHIPPING_CENTS = 390;
@@ -15,18 +17,30 @@ interface CheckoutItemInput {
   personalization?: string;
 }
 
+interface ShippingInput {
+  name: string;
+  phone: string;
+  line1: string;
+  line2: string;
+  postalCode: string;
+  city: string;
+}
+
 export async function POST(request: Request) {
-  if (!isSupabaseConfigured || !isStripeConfigured) {
+  if (!isSupabaseConfigured) {
     return NextResponse.json(
-      {
-        error:
-          "A loja ainda não está configurada (Supabase e/ou Stripe em falta). Consulta o README.md.",
-      },
+      { error: "A loja ainda não está configurada (Supabase em falta). Consulta o README.md." },
       { status: 503 }
     );
   }
 
-  let body: { items?: CheckoutItemInput[]; shippingMethod?: "standard" | "expresso" };
+  let body: {
+    items?: CheckoutItemInput[];
+    shippingMethod?: "standard" | "expresso";
+    paymentMethod?: string;
+    email?: string;
+    shipping?: Partial<ShippingInput>;
+  };
   try {
     body = await request.json();
   } catch {
@@ -43,24 +57,46 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Item de carrinho inválido." }, { status: 400 });
   }
 
-  const supabase = createClient();
+  if (!isPaymentMethod(body.paymentMethod)) {
+    return NextResponse.json({ error: "Escolhe um método de pagamento válido." }, { status: 400 });
+  }
+  const paymentMethod = body.paymentMethod;
 
+  const email = (body.email ?? "").trim();
+  if (!email || !email.includes("@")) {
+    return NextResponse.json({ error: "Indica um email válido." }, { status: 400 });
+  }
+
+  const shipping = body.shipping ?? {};
+  const shippingName = (shipping.name ?? "").trim();
+  const line1 = (shipping.line1 ?? "").trim();
+  const line2 = (shipping.line2 ?? "").trim();
+  const postalCode = (shipping.postalCode ?? "").trim();
+  const city = (shipping.city ?? "").trim();
+  const phone = (shipping.phone ?? "").trim();
+
+  if (!shippingName || !line1 || !postalCode || !city) {
+    return NextResponse.json(
+      { error: "Preenche o nome e a morada de envio completa." },
+      { status: 400 }
+    );
+  }
+  if (paymentMethod === "mbway" && !phone) {
+    return NextResponse.json(
+      { error: "Indica o número de telemóvel associado ao MB WAY." },
+      { status: 400 }
+    );
+  }
+
+  const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: profile } = user
-    ? await supabase
-        .from("profiles")
-        .select(
-          "full_name, phone, shipping_name, shipping_line1, shipping_line2, shipping_postal_code, shipping_city, stripe_customer_id"
-        )
-        .eq("id", user.id)
-        .maybeSingle()
-    : { data: null };
+  const admin = createAdminClient();
 
   const productIds = [...new Set(items.map((it) => it.productId))];
-  const { data: products, error: productsError } = await supabase
+  const { data: products, error: productsError } = await admin
     .from("products")
     .select("id, name, price_cents, colors, materials, customizable")
     .in("id", productIds);
@@ -72,14 +108,14 @@ export async function POST(request: Request) {
   const productsById = new Map(products.map((p) => [p.id as string, p]));
 
   let subtotalCents = 0;
-  const lineItems: Array<{
-    quantity: number;
-    metadata: Record<string, string>;
-    price_data: {
-      currency: string;
-      unit_amount: number;
-      product_data: { name: string; description?: string; metadata: Record<string, string> };
-    };
+  const orderItems: Array<{
+    product_id: string;
+    name: string;
+    price_cents: number;
+    qty: number;
+    color: string | null;
+    material: string | null;
+    personalization: string | null;
   }> = [];
 
   for (const item of items) {
@@ -106,28 +142,14 @@ export async function POST(request: Request) {
 
     subtotalCents += product.price_cents * item.qty;
 
-    lineItems.push({
-      quantity: item.qty,
-      metadata: {
-        product_id: product.id,
-        color: item.color,
-        material: item.material,
-        personalization,
-      },
-      price_data: {
-        currency: "eur",
-        unit_amount: product.price_cents,
-        product_data: {
-          name: product.name,
-          description: [item.color, item.material].filter(Boolean).join(" · ") || undefined,
-          metadata: {
-            product_id: product.id,
-            color: item.color,
-            material: item.material,
-            personalization,
-          },
-        },
-      },
+    orderItems.push({
+      product_id: product.id,
+      name: product.name,
+      price_cents: product.price_cents,
+      qty: item.qty,
+      color: item.color || null,
+      material: item.material || null,
+      personalization: personalization || null,
     });
   }
 
@@ -138,91 +160,51 @@ export async function POST(request: Request) {
       ? 0
       : STANDARD_SHIPPING_CENTS;
 
-  lineItems.push({
-    quantity: 1,
-    metadata: { shipping_method: shippingMethod },
-    price_data: {
+  const totalCents = subtotalCents + shippingCents;
+
+  const { data: order, error: orderError } = await admin
+    .from("orders")
+    .insert({
+      user_id: user?.id ?? null,
+      status: "pending",
+      payment_method: paymentMethod,
+      email,
+      shipping_name: shippingName,
+      shipping_address: { line1, line2: line2 || null, postal_code: postalCode, city },
+      shipping_method: shippingMethod,
+      subtotal_cents: subtotalCents,
+      shipping_cents: shippingCents,
+      total_cents: totalCents,
       currency: "eur",
-      unit_amount: shippingCents,
-      product_data: {
-        name:
-          shippingMethod === "expresso"
-            ? "Envio expresso (1-2 dias úteis)"
-            : `Envio normal (3-5 dias úteis)${shippingCents === 0 ? " — grátis" : ""}`,
-        metadata: {},
-      },
+      admin_notes: phone ? `Telefone: ${phone}` : null,
+    })
+    .select("id")
+    .single();
+
+  if (orderError || !order) {
+    console.error("[guedias] erro ao gravar encomenda:", orderError?.message);
+    return NextResponse.json({ error: "Não foi possível registar a encomenda." }, { status: 500 });
+  }
+
+  const itemsToInsert = orderItems.map((item) => ({ ...item, order_id: order.id }));
+  const { error: itemsError } = await admin.from("order_items").insert(itemsToInsert);
+  if (itemsError) {
+    console.error("[guedias] erro ao gravar itens da encomenda:", itemsError.message);
+  }
+
+  await sendOrderReceivedEmail(
+    {
+      id: order.id,
+      email,
+      shipping_name: shippingName,
+      shipping_address: { line1, line2, postal_code: postalCode, city },
+      subtotal_cents: subtotalCents,
+      shipping_cents: shippingCents,
+      total_cents: totalCents,
     },
-  });
+    orderItems,
+    paymentMethod
+  );
 
-  const siteUrl = getSiteUrl();
-  const stripe = getStripe();
-
-  // Cliente Stripe reutilizável — permite pré-preencher a morada guardada
-  // no perfil quando o cliente chega ao checkout do Stripe.
-  let customerId: string | undefined;
-  if (user) {
-    try {
-      const hasAddress = Boolean(
-        profile?.shipping_line1 && profile?.shipping_postal_code && profile?.shipping_city
-      );
-      const shipping = hasAddress
-        ? {
-            name: profile!.shipping_name || profile!.full_name || user.email || "Cliente",
-            address: {
-              line1: profile!.shipping_line1 as string,
-              line2: (profile!.shipping_line2 as string) || undefined,
-              postal_code: profile!.shipping_postal_code as string,
-              city: profile!.shipping_city as string,
-              country: "PT",
-            },
-          }
-        : undefined;
-
-      customerId = profile?.stripe_customer_id ?? undefined;
-
-      if (!customerId) {
-        const customer = await stripe.customers.create({
-          email: user.email,
-          name: profile?.full_name || undefined,
-          phone: profile?.phone || undefined,
-          shipping,
-        });
-        customerId = customer.id;
-        await supabase.from("profiles").update({ stripe_customer_id: customerId }).eq("id", user.id);
-      } else if (shipping) {
-        await stripe.customers.update(customerId, {
-          shipping,
-          phone: profile?.phone || undefined,
-        });
-      }
-    } catch (err) {
-      console.error("[guedias] não foi possível preparar o cliente Stripe:", err);
-      customerId = undefined; // segue com customer_email
-    }
-  }
-
-  try {
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      line_items: lineItems,
-      shipping_address_collection: { allowed_countries: ["PT"] },
-      ...(customerId ? { customer: customerId } : { customer_email: user?.email }),
-      locale: "pt",
-      success_url: `${siteUrl}/checkout/confirmacao?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${siteUrl}/checkout`,
-      metadata: {
-        user_id: user?.id ?? "",
-        shipping_method: shippingMethod,
-      },
-    });
-
-    if (!session.url) {
-      return NextResponse.json({ error: "Não foi possível iniciar o pagamento." }, { status: 500 });
-    }
-
-    return NextResponse.json({ url: session.url });
-  } catch (err) {
-    console.error("[guedias] erro Stripe:", err);
-    return NextResponse.json({ error: "Não foi possível iniciar o pagamento." }, { status: 500 });
-  }
+  return NextResponse.json({ orderId: order.id });
 }

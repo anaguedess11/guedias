@@ -1,43 +1,65 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "@/components/CartProvider";
 import { PrintedObject } from "@/components/PrintedObject";
 import { createClient } from "@/lib/supabase/client";
 import { formatPrice } from "@/lib/format";
+import type { PaymentMethod } from "@/lib/payment-details";
 
 const FREE_SHIPPING_THRESHOLD = 35;
 
 type ShippingMethod = "standard" | "expresso";
 
+interface ShippingForm {
+  name: string;
+  phone: string;
+  line1: string;
+  line2: string;
+  postalCode: string;
+  city: string;
+}
+
+const EMPTY_SHIPPING: ShippingForm = {
+  name: "",
+  phone: "",
+  line1: "",
+  line2: "",
+  postalCode: "",
+  city: "",
+};
+
 export default function CheckoutPage() {
-  const { items, subtotal } = useCart();
+  const router = useRouter();
+  const { items, subtotal, clear } = useCart();
   const [shippingMethod, setShippingMethod] = useState<ShippingMethod>("standard");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("mbway");
+  const [email, setEmail] = useState("");
+  const [shipping, setShipping] = useState<ShippingForm>(EMPTY_SHIPPING);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [savedAddress, setSavedAddress] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return;
+      if (user.email) setEmail(user.email);
       const { data } = await supabase
         .from("profiles")
-        .select("shipping_name, shipping_line1, shipping_line2, shipping_postal_code, shipping_city")
+        .select("full_name, phone, shipping_name, shipping_line1, shipping_line2, shipping_postal_code, shipping_city")
         .eq("id", user.id)
         .maybeSingle();
-      if (data?.shipping_line1) {
-        setSavedAddress(
-          [
-            data.shipping_name,
-            data.shipping_line1,
-            data.shipping_line2,
-            [data.shipping_postal_code, data.shipping_city].filter(Boolean).join(" "),
-          ]
-            .filter(Boolean)
-            .join(", ")
-        );
+      if (data) {
+        setShipping({
+          name: data.shipping_name || data.full_name || "",
+          phone: data.phone || "",
+          line1: data.shipping_line1 || "",
+          line2: data.shipping_line2 || "",
+          postalCode: data.shipping_postal_code || "",
+          city: data.shipping_city || "",
+        });
       }
     });
   }, []);
@@ -65,7 +87,12 @@ export default function CheckoutPage() {
     );
   }
 
-  async function handlePay() {
+  function updateShipping<K extends keyof ShippingForm>(key: K, value: ShippingForm[K]) {
+    setShipping((s) => ({ ...s, [key]: value }));
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
     setLoading(true);
     setError(null);
     try {
@@ -74,6 +101,16 @@ export default function CheckoutPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           shippingMethod,
+          paymentMethod,
+          email,
+          shipping: {
+            name: shipping.name,
+            phone: shipping.phone,
+            line1: shipping.line1,
+            line2: shipping.line2,
+            postalCode: shipping.postalCode,
+            city: shipping.city,
+          },
           items: items.map((it) => ({
             productId: it.productId,
             qty: it.qty,
@@ -84,27 +121,28 @@ export default function CheckoutPage() {
         }),
       });
       const data = await res.json();
-      if (!res.ok || !data.url) {
-        setError(data.error ?? "Não foi possível iniciar o pagamento.");
+      if (!res.ok || !data.orderId) {
+        setError(data.error ?? "Não foi possível registar a encomenda.");
         setLoading(false);
         return;
       }
-      window.location.href = data.url;
+      clear();
+      router.push(`/checkout/confirmacao?order_id=${data.orderId}`);
     } catch {
-      setError("Não foi possível ligar ao servidor de pagamentos.");
+      setError("Não foi possível ligar ao servidor.");
       setLoading(false);
     }
   }
 
   return (
-    <div className="container-page py-10 sm:py-14">
+    <form onSubmit={handleSubmit} className="container-page py-10 sm:py-14">
       <p className="eyebrow">Checkout</p>
       <h1 className="mt-2 font-display text-3xl font-semibold text-stone-900 sm:text-4xl">
-        Rever e pagar
+        Rever e confirmar
       </h1>
       <p className="mt-2 max-w-lg text-sm text-stone-900/55">
-        Confirma os artigos e a morada e o pagamento é feito na página segura do Stripe — nós
-        nunca vemos nem guardamos os dados do teu cartão.
+        Paga por MB WAY ou transferência bancária — sem cartão, sem plataformas de terceiros.
+        Confirmamos assim que recebermos o pagamento.
       </p>
 
       <div className="mt-10 grid gap-10 lg:grid-cols-3 lg:gap-12">
@@ -114,7 +152,7 @@ export default function CheckoutPage() {
               <div key={item.key} className="card flex gap-4 p-4">
                 <PrintedObject
                   profile={item.profile}
-                  color="#C7430F"
+                  color="#A97464"
                   className="h-20 w-20 shrink-0 rounded-xl"
                 />
                 <div className="flex flex-1 flex-col justify-center">
@@ -135,23 +173,85 @@ export default function CheckoutPage() {
             ))}
           </div>
 
-          {savedAddress && (
-            <div className="card flex flex-wrap items-start justify-between gap-3 p-5">
-              <div>
-                <h2 className="text-sm font-semibold text-stone-900">Morada de envio</h2>
-                <p className="mt-1 text-sm text-stone-900/60">{savedAddress}</p>
-                <p className="mt-1 text-xs text-stone-900/45">
-                  Aparece pré-preenchida no pagamento — podes alterá-la lá.
-                </p>
-              </div>
-              <Link
-                href="/conta/perfil"
-                className="text-xs font-medium text-clay-600 hover:text-clay-700"
-              >
-                Editar
-              </Link>
+          <div className="card space-y-3 p-6">
+            <h2 className="text-sm font-semibold text-stone-900">Contacto</h2>
+            <div>
+              <label className="label">Email</label>
+              <input
+                type="email"
+                required
+                className="input"
+                placeholder="tu@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
             </div>
-          )}
+          </div>
+
+          <div className="card space-y-3 p-6">
+            <h2 className="text-sm font-semibold text-stone-900">Morada de envio</h2>
+            <div>
+              <label className="label">Nome</label>
+              <input
+                required
+                className="input"
+                placeholder="Nome completo"
+                value={shipping.name}
+                onChange={(e) => updateShipping("name", e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="label">Telemóvel {paymentMethod === "mbway" && "(para o MB WAY)"}</label>
+              <input
+                required={paymentMethod === "mbway"}
+                className="input"
+                placeholder="9xx xxx xxx"
+                value={shipping.phone}
+                onChange={(e) => updateShipping("phone", e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="label">Morada</label>
+              <input
+                required
+                className="input"
+                placeholder="Rua, número"
+                value={shipping.line1}
+                onChange={(e) => updateShipping("line1", e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="label">Morada (linha 2, opcional)</label>
+              <input
+                className="input"
+                placeholder="Andar, apartamento…"
+                value={shipping.line2}
+                onChange={(e) => updateShipping("line2", e.target.value)}
+              />
+            </div>
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="label">Código postal</label>
+                <input
+                  required
+                  className="input"
+                  placeholder="0000-000"
+                  value={shipping.postalCode}
+                  onChange={(e) => updateShipping("postalCode", e.target.value)}
+                />
+              </div>
+              <div className="flex-[2]">
+                <label className="label">Localidade</label>
+                <input
+                  required
+                  className="input"
+                  placeholder="Cidade"
+                  value={shipping.city}
+                  onChange={(e) => updateShipping("city", e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
 
           <div className="card space-y-3 p-6">
             <h2 className="text-sm font-semibold text-stone-900">Método de envio</h2>
@@ -167,9 +267,24 @@ export default function CheckoutPage() {
               title="Envio expresso (1-2 dias úteis)"
               description={formatPrice(7.9)}
             />
+          </div>
+
+          <div className="card space-y-3 p-6">
+            <h2 className="text-sm font-semibold text-stone-900">Método de pagamento</h2>
+            <RadioCard
+              selected={paymentMethod === "mbway"}
+              onSelect={() => setPaymentMethod("mbway")}
+              title="MB WAY"
+              description="Enviamos-te o nosso número — pagas tu, pela tua app MB WAY."
+            />
+            <RadioCard
+              selected={paymentMethod === "transferencia"}
+              onSelect={() => setPaymentMethod("transferencia")}
+              title="Transferência bancária"
+              description="Enviamos-te o IBAN e a referência a usar na transferência."
+            />
             <p className="pt-1 text-xs text-stone-900/45">
-              Enviamos para Portugal. Morada, email e método de pagamento são recolhidos na
-              página segura do Stripe no passo seguinte.
+              A encomenda fica reservada assim que confirmamos a receção do pagamento.
             </p>
           </div>
 
@@ -183,8 +298,8 @@ export default function CheckoutPage() {
             <Link href="/carrinho" className="btn-ghost">
               ← Voltar ao carrinho
             </Link>
-            <button onClick={handlePay} disabled={loading} className="btn-primary">
-              {loading ? "A abrir pagamento seguro…" : "Pagar com segurança"}
+            <button type="submit" disabled={loading} className="btn-primary">
+              {loading ? "A confirmar…" : "Confirmar encomenda"}
             </button>
           </div>
         </div>
@@ -209,7 +324,7 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
-    </div>
+    </form>
   );
 }
 

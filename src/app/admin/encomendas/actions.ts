@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import { sendOrderConfirmationEmail, sendOrderStatusEmail, type EmailOrder } from "@/lib/email";
 
 type FulfillmentStatus = "not_started" | "in_production" | "shipped" | "delivered";
@@ -20,6 +19,44 @@ function revalidateOrder(orderId: string) {
   revalidatePath("/admin/encomendas");
   revalidatePath(`/admin/encomendas/${orderId}`);
   revalidatePath("/conta");
+}
+
+export async function markOrderPaid(orderId: string): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  if (!admin) return { error: "Sem permissões de administração." };
+
+  const supabase = createAdminClient();
+  const { data: order } = await supabase
+    .from("orders")
+    .select(`${ORDER_EMAIL_COLUMNS}, status, order_items(name, qty, price_cents, color, material, personalization)`)
+    .eq("id", orderId)
+    .maybeSingle();
+
+  if (!order) return { error: "Encomenda não encontrada." };
+  if (order.status === "paid") return { error: "Esta encomenda já está marcada como paga." };
+
+  const { error } = await supabase.from("orders").update({ status: "paid" }).eq("id", orderId);
+  if (error) {
+    console.error("[guedias] erro ao marcar encomenda como paga:", error.message);
+    return { error: "Não foi possível atualizar o estado do pagamento." };
+  }
+
+  revalidateOrder(orderId);
+
+  const { order_items, ...emailOrder } = order as EmailOrder & {
+    status: string;
+    order_items: {
+      name: string;
+      qty: number;
+      price_cents: number;
+      color: string | null;
+      material: string | null;
+      personalization: string | null;
+    }[];
+  };
+  await sendOrderConfirmationEmail(emailOrder, order_items ?? []);
+
+  return { ok: true };
 }
 
 export async function updateOrderFulfillment(
@@ -152,48 +189,33 @@ export async function cancelOrder(orderId: string): Promise<ActionResult> {
   return { ok: true };
 }
 
-export async function refundOrder(
+// Sem gateway de pagamentos, o reembolso é feito à parte pelo admin (MB WAY
+// ou transferência de volta) — isto só regista o valor já devolvido.
+export async function registerRefund(
   orderId: string,
   amountCents?: number
 ): Promise<ActionResult> {
   const admin = await requireAdmin();
   if (!admin) return { error: "Sem permissões de administração." };
 
-  if (!isStripeConfigured) {
-    return { error: "O Stripe não está configurado — não é possível reembolsar." };
-  }
-
   const supabase = createAdminClient();
   const { data: order } = await supabase
     .from("orders")
-    .select("id, status, total_cents, refunded_cents, stripe_payment_intent")
+    .select("id, status, total_cents, refunded_cents")
     .eq("id", orderId)
     .maybeSingle();
 
   if (!order) return { error: "Encomenda não encontrada." };
   if (order.status !== "paid" && order.status !== "canceled") {
-    return { error: "Só é possível reembolsar encomendas pagas." };
-  }
-  if (!order.stripe_payment_intent) {
-    return { error: "Esta encomenda não tem um pagamento Stripe associado." };
+    return { error: "Só é possível registar reembolso em encomendas pagas." };
   }
 
   const remaining = order.total_cents - (order.refunded_cents ?? 0);
   if (remaining <= 0) return { error: "Esta encomenda já foi totalmente reembolsada." };
 
   const amount = amountCents && amountCents > 0 ? Math.min(Math.round(amountCents), remaining) : remaining;
-
-  try {
-    await getStripe().refunds.create({
-      payment_intent: order.stripe_payment_intent,
-      amount,
-    });
-  } catch (err) {
-    console.error("[guedias] erro ao reembolsar no Stripe:", err);
-    return { error: "O Stripe recusou o reembolso. Verifica o painel do Stripe." };
-  }
-
   const newRefunded = (order.refunded_cents ?? 0) + amount;
+
   const { error } = await supabase
     .from("orders")
     .update({
@@ -203,8 +225,8 @@ export async function refundOrder(
     .eq("id", orderId);
 
   if (error) {
-    console.error("[guedias] reembolso feito no Stripe mas erro ao gravar:", error.message);
-    return { error: "Reembolso feito no Stripe, mas não foi possível atualizar a encomenda." };
+    console.error("[guedias] erro ao registar reembolso:", error.message);
+    return { error: "Não foi possível registar o reembolso." };
   }
 
   revalidateOrder(orderId);

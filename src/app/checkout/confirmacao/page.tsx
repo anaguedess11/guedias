@@ -1,59 +1,90 @@
 import Link from "next/link";
-import type Stripe from "stripe";
-import { getStripe, isStripeConfigured } from "@/lib/stripe";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { formatPrice } from "@/lib/format";
 import { ClearCartOnSuccess } from "@/components/ClearCartOnSuccess";
+import { PAYMENT_METHOD_LABEL, paymentDetails, isPaymentMethod } from "@/lib/payment-details";
+
+interface OrderItemRow {
+  id: string;
+  name: string;
+  qty: number;
+  price_cents: number;
+  color: string | null;
+  material: string | null;
+  personalization: string | null;
+}
+
+interface OrderRow {
+  id: string;
+  status: "pending" | "paid" | "failed" | "canceled" | "refunded";
+  payment_method: string;
+  email: string;
+  shipping_name: string | null;
+  shipping_address: {
+    line1?: string | null;
+    line2?: string | null;
+    postal_code?: string | null;
+    city?: string | null;
+  } | null;
+  subtotal_cents: number;
+  shipping_cents: number;
+  total_cents: number;
+  order_items: OrderItemRow[];
+}
 
 export default async function ConfirmacaoPage({
   searchParams,
 }: {
-  searchParams: { session_id?: string };
+  searchParams: { order_id?: string };
 }) {
-  const sessionId = searchParams.session_id;
+  const orderId = searchParams.order_id;
 
-  if (!isStripeConfigured) {
+  if (!isSupabaseConfigured) {
     return (
       <StateMessage
-        title="Pagamentos ainda não configurados"
-        text="Falta configurar as chaves do Stripe (ver README.md) para concluir compras a sério."
+        title="Loja ainda não configurada"
+        text="Falta configurar o Supabase (ver README.md) para concluir compras a sério."
       />
     );
   }
 
-  if (!sessionId) {
-    return (
-      <StateMessage
-        title="Não encontrámos essa encomenda"
-        text="Falta o identificador da sessão de pagamento."
-      />
-    );
-  }
-
-  let session: Stripe.Checkout.Session;
-  try {
-    const stripe = getStripe();
-    session = await stripe.checkout.sessions.retrieve(sessionId, {
-      expand: ["line_items", "payment_intent"],
-    });
-  } catch {
+  if (!orderId) {
     return (
       <StateMessage
         title="Não encontrámos essa encomenda"
-        text="A sessão de pagamento é inválida ou já expirou."
+        text="Falta o identificador da encomenda."
       />
     );
   }
 
-  const paid = session.payment_status === "paid" || session.payment_status === "no_payment_required";
-  const lineItems = session.line_items?.data ?? [];
-  const productLines = lineItems.filter((li) => li.metadata?.product_id);
-  const shippingLine = lineItems.find((li) => !li.metadata?.product_id);
-  const shippingDetails = session.collected_information?.shipping_details;
-  const customerDetails = session.customer_details;
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("orders")
+    .select(
+      "id, status, payment_method, email, shipping_name, shipping_address, subtotal_cents, shipping_cents, total_cents, order_items(id, name, qty, price_cents, color, material, personalization)"
+    )
+    .eq("id", orderId)
+    .maybeSingle();
+
+  const order = data as OrderRow | null;
+
+  if (!order) {
+    return (
+      <StateMessage
+        title="Não encontrámos essa encomenda"
+        text="Verifica a hiperligação ou contacta-nos indicando o teu email."
+      />
+    );
+  }
+
+  const paid = order.status === "paid";
+  const paymentMethod = isPaymentMethod(order.payment_method) ? order.payment_method : "transferencia";
+  const addr = order.shipping_address;
 
   return (
     <div className="container-page py-14 sm:py-20">
-      {paid && <ClearCartOnSuccess />}
+      <ClearCartOnSuccess />
 
       <div className="mx-auto max-w-2xl text-center">
         <div
@@ -63,39 +94,71 @@ export default async function ConfirmacaoPage({
         >
           {paid ? <CheckIcon /> : <ClockIcon />}
         </div>
-        <p className="eyebrow mt-6">{paid ? "Encomenda confirmada" : "Pagamento pendente"}</p>
+        <p className="eyebrow mt-6">{paid ? "Encomenda confirmada" : "Encomenda recebida"}</p>
         <h1 className="mt-2 font-display text-3xl font-semibold text-stone-900 sm:text-4xl">
           {paid
-            ? `Obrigada${customerDetails?.name ? `, ${customerDetails.name.split(" ")[0]}` : ""}!`
-            : "Aguardamos a confirmação do pagamento"}
+            ? `Obrigada${order.shipping_name ? `, ${order.shipping_name.split(" ")[0]}` : ""}!`
+            : "Falta só confirmar o pagamento"}
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-stone-900/60 sm:text-base">
           {paid ? (
             <>
-              O teu pagamento foi confirmado. Numa loja real, começaríamos agora a imprimir as
-              tuas peças na Creality Hi Combo.
-              {customerDetails?.email && ` Enviámos a confirmação para ${customerDetails.email}.`}
+              O teu pagamento foi confirmado e a encomenda vai começar a ser impressa em breve na
+              nossa Creality Hi Combo. Enviámos a confirmação para {order.email}.
             </>
           ) : (
-            "Escolheste um método de pagamento com confirmação diferida (ex: referência multibanco). Assim que recebermos a confirmação, a encomenda fica registada e recebes um email."
+            <>
+              Registámos a tua encomenda #{order.id.slice(0, 8)} e enviámos as instruções de
+              pagamento para {order.email}. Assim que confirmarmos a receção, recebes um novo
+              email e a encomenda entra em produção.
+            </>
           )}
         </p>
       </div>
 
-      <div className="card mx-auto mt-10 max-w-2xl p-6">
+      {!paid && (
+        <div className="card mx-auto mt-8 max-w-2xl p-6">
+          <h2 className="text-sm font-semibold text-stone-900">
+            Como pagar por {PAYMENT_METHOD_LABEL[paymentMethod]}
+          </h2>
+          {paymentMethod === "mbway" ? (
+            <p className="mt-2 text-sm leading-relaxed text-stone-900/65">
+              Envia <strong>{formatPrice(order.total_cents / 100)}</strong> para o número{" "}
+              <strong>{paymentDetails.mbwayPhone || "(a confirmar — contacta-nos)"}</strong> via MB
+              WAY.
+            </p>
+          ) : (
+            <div className="mt-2 space-y-1 text-sm leading-relaxed text-stone-900/65">
+              <p>
+                Titular: <strong>{paymentDetails.bankHolder || "(a confirmar — contacta-nos)"}</strong>
+              </p>
+              <p>
+                IBAN: <strong>{paymentDetails.bankIban || "(a confirmar — contacta-nos)"}</strong>
+              </p>
+              {paymentDetails.bankName && <p>Banco: {paymentDetails.bankName}</p>}
+              <p>
+                Valor: <strong>{formatPrice(order.total_cents / 100)}</strong>
+              </p>
+              <p>Descrição: indica #{order.id.slice(0, 8)} para identificarmos o pagamento.</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="card mx-auto mt-8 max-w-2xl p-6">
         <h2 className="text-sm font-semibold text-stone-900">Resumo da encomenda</h2>
         <ul className="mt-4 divide-y divide-black/5">
-          {productLines.map((item) => (
+          {order.order_items.map((item) => (
             <li key={item.id} className="flex justify-between gap-3 py-3 text-sm">
               <span className="text-stone-900/70">
-                {item.quantity}× {item.description}
+                {item.qty}× {item.name}
                 <span className="block text-xs text-stone-900/45">
-                  {[item.metadata?.color, item.metadata?.material].filter(Boolean).join(" · ")}
-                  {item.metadata?.personalization ? ` · “${item.metadata.personalization}”` : ""}
+                  {[item.color, item.material].filter(Boolean).join(" · ")}
+                  {item.personalization ? ` · “${item.personalization}”` : ""}
                 </span>
               </span>
               <span className="whitespace-nowrap font-medium text-stone-900">
-                {formatPrice(item.amount_total / 100)}
+                {formatPrice((item.price_cents * item.qty) / 100)}
               </span>
             </li>
           ))}
@@ -104,27 +167,24 @@ export default async function ConfirmacaoPage({
         <div className="mt-2 space-y-2 border-t border-black/5 pt-4 text-sm">
           <div className="flex justify-between text-stone-900/65">
             <span>Subtotal</span>
-            <span>{formatPrice((session.amount_subtotal ?? 0) / 100)}</span>
+            <span>{formatPrice(order.subtotal_cents / 100)}</span>
           </div>
           <div className="flex justify-between text-stone-900/65">
-            <span>Envio{shippingLine ? ` (${shippingLine.description})` : ""}</span>
+            <span>Envio</span>
             <span>
-              {shippingLine && shippingLine.amount_total === 0
-                ? "Grátis"
-                : formatPrice((shippingLine?.amount_total ?? 0) / 100)}
+              {order.shipping_cents === 0 ? "Grátis" : formatPrice(order.shipping_cents / 100)}
             </span>
           </div>
         </div>
         <div className="mt-4 flex justify-between border-t border-black/5 pt-4 font-display text-base font-semibold text-stone-900">
           <span>Total</span>
-          <span>{formatPrice((session.amount_total ?? 0) / 100)}</span>
+          <span>{formatPrice(order.total_cents / 100)}</span>
         </div>
 
-        {shippingDetails && (
+        {addr && (
           <div className="mt-4 rounded-lg bg-stone-50 px-4 py-3 text-xs text-stone-900/55">
-            A enviar para: {shippingDetails.name}, {shippingDetails.address.line1}
-            {shippingDetails.address.line2 ? `, ${shippingDetails.address.line2}` : ""},{" "}
-            {shippingDetails.address.postal_code} {shippingDetails.address.city}
+            A enviar para: {order.shipping_name}, {addr.line1}
+            {addr.line2 ? `, ${addr.line2}` : ""}, {addr.postal_code} {addr.city}
           </div>
         )}
       </div>

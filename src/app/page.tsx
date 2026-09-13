@@ -71,22 +71,22 @@ export default async function HomePage() {
             <div className="grid grid-cols-2 gap-4 sm:gap-5">
               <PrintedObject
                 profile={[0.34, 0.48, 0.62, 0.78, 0.88, 0.8, 0.62, 0.46, 0.55, 0.66]}
-                color="#C7430F"
+                color="#A97464"
                 className="aspect-[3/4] rounded-xl2 shadow-lift ring-1 ring-white/10"
               />
               <PrintedObject
                 profile={[0.9, 0.35, 0.3, 0.3, 0.35, 0.9]}
-                color="#3C61A6"
+                color="#8D8A87"
                 className="mt-8 aspect-[3/4] rounded-xl2 shadow-lift ring-1 ring-white/10"
               />
               <PrintedObject
                 profile={[0.4, 0.6, 0.6, 0.4]}
-                color="#A8B7CC"
+                color="#BDB5AC"
                 className="aspect-[3/4] rounded-xl2 shadow-lift ring-1 ring-white/10"
               />
               <PrintedObject
                 profile={[0.9, 0.75, 0.6, 0.75, 0.9]}
-                color="#E98F63"
+                color="#D5A38F"
                 className="-mt-8 aspect-[3/4] rounded-xl2 shadow-lift ring-1 ring-white/10"
               />
             </div>
@@ -215,7 +215,7 @@ export default async function HomePage() {
   );
 }
 
-const CATEGORY_TINTS = ["#C7430F", "#3C61A6", "#0B1E3D", "#E98F63"];
+const CATEGORY_TINTS = ["#A97464", "#696663", "#262524", "#D5A38F"];
 
 function ArrowIcon() {
   return (

@@ -26,7 +26,7 @@ export function PrintedObject({
         background: `radial-gradient(120% 100% at 50% 0%, ${hexToRgba(
           color,
           0.16
-        )}, transparent 70%), linear-gradient(180deg, #F8FAFC 0%, #E7EDF5 100%)`,
+        )}, transparent 70%), linear-gradient(180deg, #FAF9F7 0%, #EBE8E3 100%)`,
       }}
     >
       <div

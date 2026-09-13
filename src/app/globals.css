@@ -3,46 +3,47 @@
 @tailwind utilities;
 
 /* ─────────────────────────────────────────────────────────────
-   Paleta Guedias — azul-marinho + coral, sobre neutros frios.
+   Paleta Guedias — grafite + cobre, extraída diretamente do logótipo
+   (o texto "GUEDIAS" em cinza-grafite, a barra em gradiente cobre).
    Tudo em triplos RGB para o Tailwind (rgb(var(--x) / <alpha>)).
    Ajusta os tons aqui e o site inteiro acompanha.
    ───────────────────────────────────────────────────────────── */
 :root {
-  /* Azul-marinho — cor primária */
-  --c-navy-50: 237 242 250;
-  --c-navy-100: 213 224 240;
-  --c-navy-200: 173 195 224;
-  --c-navy-400: 60 97 166;
-  --c-navy-500: 34 68 127;
-  --c-navy-600: 18 47 90;
-  --c-navy-700: 11 30 61;
-  --c-navy-800: 8 22 46;
-  --c-navy-900: 5 14 30;
+  /* Grafite — cor primária (era azul-marinho) */
+  --c-navy-50: 245 244 243;
+  --c-navy-100: 231 229 227;
+  --c-navy-200: 208 205 202;
+  --c-navy-400: 141 138 135;
+  --c-navy-500: 105 102 99;
+  --c-navy-600: 79 77 75;
+  --c-navy-700: 56 54 53;
+  --c-navy-800: 38 37 36;
+  --c-navy-900: 22 21 20;
 
-  /* Coral — acento / CTA */
-  --c-coral-50: 253 240 234;
-  --c-coral-100: 250 220 206;
-  --c-coral-200: 242 184 155;
-  --c-coral-300: 233 143 99;
-  --c-coral-400: 223 103 51;
-  --c-coral-500: 199 67 15;
-  --c-coral-600: 166 54 12;
-  --c-coral-700: 131 43 11;
-  --c-coral-800: 92 32 9;
-  --c-coral-900: 57 21 6;
+  /* Cobre — acento / CTA (era coral), tirada do gradiente da barra do logo */
+  --c-coral-50: 250 241 237;
+  --c-coral-100: 244 226 216;
+  --c-coral-200: 230 194 176;
+  --c-coral-300: 213 163 143;
+  --c-coral-400: 193 138 118;
+  --c-coral-500: 169 116 100;
+  --c-coral-600: 138 91 76;
+  --c-coral-700: 108 70 58;
+  --c-coral-800: 79 51 42;
+  --c-coral-900: 52 33 27;
 
-  /* Neutros frios — fundo e texto */
-  --c-stone-25: 248 250 252;
-  --c-stone-50: 241 245 250;
-  --c-stone-100: 227 234 243;
-  --c-stone-200: 205 215 228;
-  --c-stone-300: 168 183 203;
-  --c-stone-400: 118 136 160;
-  --c-stone-500: 85 98 119;
-  --c-stone-600: 62 74 92;
-  --c-stone-700: 44 53 70;
-  --c-stone-800: 27 35 49;
-  --c-stone-900: 14 23 38;
+  /* Neutros quentes — fundo e texto (era cinza-azulado frio) */
+  --c-stone-25: 250 249 247;
+  --c-stone-50: 245 243 240;
+  --c-stone-100: 235 232 227;
+  --c-stone-200: 219 214 207;
+  --c-stone-300: 189 181 172;
+  --c-stone-400: 152 143 133;
+  --c-stone-500: 116 108 99;
+  --c-stone-600: 86 79 72;
+  --c-stone-700: 60 55 50;
+  --c-stone-800: 39 35 32;
+  --c-stone-900: 23 20 18;
 }
 
 /* --font-sans e --font-display são definidas por next/font em <html>

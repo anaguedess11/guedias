@@ -54,7 +54,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
           <ProductVisual
             imageUrl={product.imageUrl}
             profile={product.profile}
-            color={product.colors[0]?.hex ?? "#C7430F"}
+            color={product.colors[0]?.hex ?? "#A97464"}
             className="aspect-square w-full rounded-xl2 shadow-card"
           />
           <div className="mt-4 grid grid-cols-4 gap-3">

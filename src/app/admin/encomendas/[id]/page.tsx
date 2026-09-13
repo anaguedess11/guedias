@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { formatPrice } from "@/lib/format";
 import { OrderStatusSelect } from "@/components/OrderStatusSelect";
 import { OrderActions } from "@/components/OrderActions";
+import { PAYMENT_METHOD_LABEL, isPaymentMethod } from "@/lib/payment-details";
 
 export const metadata: Metadata = {
   title: "Encomenda — Guedias",
@@ -23,6 +24,7 @@ interface OrderRow {
   id: string;
   email: string;
   status: "pending" | "paid" | "failed" | "canceled" | "refunded";
+  payment_method: string;
   fulfillment_status: "not_started" | "in_production" | "shipped" | "delivered";
   subtotal_cents: number;
   shipping_cents: number;
@@ -38,8 +40,6 @@ interface OrderRow {
     city?: string | null;
   } | null;
   shipping_method: string | null;
-  stripe_session_id: string | null;
-  stripe_payment_intent: string | null;
   admin_notes: string | null;
   order_items: OrderItemRow[];
 }
@@ -65,7 +65,7 @@ export default async function AdminOrderDetailPage({ params }: { params: { id: s
   const { data } = await supabase
     .from("orders")
     .select(
-      "id, email, status, fulfillment_status, subtotal_cents, shipping_cents, total_cents, refunded_cents, currency, created_at, shipping_name, shipping_address, shipping_method, stripe_session_id, stripe_payment_intent, admin_notes, order_items(name, qty, price_cents, color, material, personalization)"
+      "id, email, status, payment_method, fulfillment_status, subtotal_cents, shipping_cents, total_cents, refunded_cents, currency, created_at, shipping_name, shipping_address, shipping_method, admin_notes, order_items(name, qty, price_cents, color, material, personalization)"
     )
     .eq("id", params.id)
     .maybeSingle();
@@ -179,25 +179,14 @@ export default async function AdminOrderDetailPage({ params }: { params: { id: s
             </Link>
           </div>
 
-          {(order.stripe_session_id || order.stripe_payment_intent) && (
-            <div className="card p-5">
-              <h2 className="text-sm font-semibold text-stone-900">Stripe</h2>
-              <dl className="mt-2 space-y-1 text-xs text-stone-900/55">
-                {order.stripe_payment_intent && (
-                  <div>
-                    <dt className="inline font-medium">Payment intent: </dt>
-                    <dd className="inline break-all">{order.stripe_payment_intent}</dd>
-                  </div>
-                )}
-                {order.stripe_session_id && (
-                  <div>
-                    <dt className="inline font-medium">Sessão: </dt>
-                    <dd className="inline break-all">{order.stripe_session_id}</dd>
-                  </div>
-                )}
-              </dl>
-            </div>
-          )}
+          <div className="card p-5">
+            <h2 className="text-sm font-semibold text-stone-900">Pagamento</h2>
+            <p className="mt-2 text-sm text-stone-900/70">
+              {isPaymentMethod(order.payment_method)
+                ? PAYMENT_METHOD_LABEL[order.payment_method]
+                : order.payment_method}
+            </p>
+          </div>
         </div>
 
         <OrderActions
@@ -206,7 +195,6 @@ export default async function AdminOrderDetailPage({ params }: { params: { id: s
             status: order.status,
             total_cents: order.total_cents,
             refunded_cents: refunded,
-            hasPaymentIntent: Boolean(order.stripe_payment_intent),
             admin_notes: order.admin_notes ?? "",
             shipping_name: order.shipping_name ?? "",
             line1: addr?.line1 ?? "",
