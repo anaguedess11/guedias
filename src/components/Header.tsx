@@ -23,7 +23,7 @@ export function Header({
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-black/5 bg-white/90 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-black/5 bg-white">
       <div className="container-page flex h-16 items-center justify-between sm:h-20">
         <Link href="/" className="flex items-center" onClick={() => setOpen(false)}>
           <Image
