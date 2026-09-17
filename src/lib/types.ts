@@ -76,3 +76,75 @@ export interface ProductWriteInput {
   featured: boolean;
   tags: string[];
 }
+
+// ─────────────────────────────────────────────────────────────
+// Filamentos
+// ─────────────────────────────────────────────────────────────
+export interface Filament {
+  id: string;
+  name: string;
+  brand: string | null;
+  color: string;
+  material: string;
+  pricePerKg: number;
+  notes: string | null;
+  createdAt: string;
+}
+
+export interface FilamentWriteInput {
+  name: string;
+  brand: string | null;
+  color: string;
+  material: string;
+  price_per_kg_cents: number;
+  notes: string | null;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Configurações gerais da calculadora
+// ─────────────────────────────────────────────────────────────
+export interface CalculatorSettings {
+  machineRate: number;
+  laborRate: number;
+  failureRatePercent: number;
+  feePercent: number;
+  feeFixed: number;
+  vatPercent: number;
+  vatEnabled: boolean;
+}
+
+export interface CalculatorSettingsWriteInput {
+  machine_rate_cents: number;
+  labor_rate_cents: number;
+  failure_reserve_percent: number;
+  fee_percent: number;
+  fee_fixed_cents: number;
+  vat_percent: number;
+  vat_enabled: boolean;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Cálculos guardados
+// ─────────────────────────────────────────────────────────────
+export interface SavedCalculation {
+  id: string;
+  name: string;
+  filamentId: string | null;
+  inputs: Record<string, unknown>;
+  totalCost: number;
+  suggestedPrice: number;
+  profit: number;
+  marginPercent: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SavedCalculationWriteInput {
+  name: string;
+  filament_id: string | null;
+  inputs: Record<string, unknown>;
+  total_cost_cents: number;
+  suggested_price_cents: number;
+  profit_cents: number;
+  margin_percent: number;
+}

@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { categories } from "@/data/categories";
-import { Product, ProductColor, ProductWriteInput } from "@/lib/types";
+import { Product, ProductColor, ProductWriteInput, SavedCalculation } from "@/lib/types";
 import { createProduct, updateProduct } from "@/app/admin/actions";
 import { ImageUploadField } from "@/components/ImageUploadField";
+import { formatPrice } from "@/lib/format";
 
 const PROFILE_PRESETS: { label: string; profile: number[] }[] = [
   { label: "Vaso", profile: [0.34, 0.48, 0.62, 0.78, 0.88, 0.8, 0.62, 0.46, 0.55, 0.66] },
@@ -46,7 +47,13 @@ function toFormState(product?: Product) {
   };
 }
 
-export function ProductForm({ product }: { product?: Product }) {
+export function ProductForm({
+  product,
+  savedCalculations = [],
+}: {
+  product?: Product;
+  savedCalculations?: SavedCalculation[];
+}) {
   const router = useRouter();
   const isEdit = Boolean(product);
   const [form, setForm] = useState(toFormState(product));
@@ -188,6 +195,29 @@ export function ProductForm({ product }: { product?: Product }) {
               onChange={(e) => set("price", e.target.value)}
             />
           </div>
+          {savedCalculations.length > 0 && (
+            <div className="sm:col-span-2">
+              <label className="label">Importar preço de um cálculo guardado</label>
+              <select
+                className="input"
+                defaultValue=""
+                onChange={(e) => {
+                  const calc = savedCalculations.find((c) => c.id === e.target.value);
+                  if (calc) set("price", String(calc.suggestedPrice));
+                  e.target.value = "";
+                }}
+              >
+                <option value="" disabled>
+                  Escolher um cálculo…
+                </option>
+                {savedCalculations.map((calc) => (
+                  <option key={calc.id} value={calc.id}>
+                    {calc.name} — {formatPrice(calc.suggestedPrice)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <div>
             <label className="label">Preço antes de desconto (€, opcional)</label>
             <input

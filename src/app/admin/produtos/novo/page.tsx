@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import { ProductForm } from "@/components/ProductForm";
+import { getAllSavedCalculations } from "@/lib/data/savedCalculations";
 
 export const metadata: Metadata = {
   title: "Novo produto — Guedias",
 };
 
-export default function NovoProdutoPage() {
+export default async function NovoProdutoPage() {
+  const savedCalculations = await getAllSavedCalculations();
+
   return (
     <div>
       <p className="eyebrow">Administração</p>
@@ -13,7 +16,7 @@ export default function NovoProdutoPage() {
         Novo produto
       </h1>
       <div className="mt-8 max-w-3xl">
-        <ProductForm />
+        <ProductForm savedCalculations={savedCalculations} />
       </div>
     </div>
   );
