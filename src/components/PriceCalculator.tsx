@@ -17,24 +17,24 @@ const MANUAL_DEFAULTS = {
   spoolPrice: "22",
   partWeight: "50",
   // Energia
-  printerPower: "150",
-  printHours: "3",
+  printerPower: "1150",
+  printMinutes: "180",
   kwhPrice: "0.16",
   // Ajuda para calcular a taxa de máquina
-  printerPrice: "400",
-  lifespanHours: "4000",
+  printerPrice: "300",
+  lifespanHours: "3000",
   annualMaintenance: "80",
   annualPrintHours: "800",
   // Acabamento
   finishingMinutes: "15",
   finishingMaterials: "0.30",
   // Trabalho
-  prepMinutes: "20",
+  prepMinutes: "10",
   handlingMinutes: "10",
   // Embalagem
   packagingCost: "0.80",
   // Margem
-  margin: "50",
+  margin: "30",
 };
 
 function defaultsFromSettings(settings: CalculatorSettings) {
@@ -62,6 +62,18 @@ function roundToCharm(x: number): number {
   let r = base + 0.9;
   if (r < x - 1e-9) r += 1;
   return r;
+}
+
+// Cálculos guardados antes da mudança de "Tempo de impressão" de horas
+// para minutos ainda têm `printHours` nos inputs em vez de `printMinutes`.
+// Converte à entrada para que continuem a abrir com o valor certo.
+function migrateInputs(inputs: Record<string, unknown>): Partial<State> {
+  const migrated: Record<string, unknown> = { ...inputs };
+  if (migrated.printMinutes === undefined && migrated.printHours !== undefined) {
+    migrated.printMinutes = String(num(String(migrated.printHours)) * 60);
+  }
+  delete migrated.printHours;
+  return migrated as Partial<State>;
 }
 
 export function PriceCalculator({
@@ -102,8 +114,11 @@ export function PriceCalculator({
 
   const r = useMemo(() => {
     const filamentCost = (num(s.spoolPrice) * num(s.partWeight)) / 1000;
-    const energyCost = (num(s.printerPower) / 1000) * num(s.printHours) * num(s.kwhPrice);
-    const machineCost = num(s.machineRate) * num(s.printHours);
+    const printMinutes = num(s.printMinutes);
+    // Energia é medida em kWh, por isso precisa das horas; a taxa de máquina
+    // (€/h nas Configurações) é convertida para €/min antes de multiplicar.
+    const energyCost = (num(s.printerPower) / 1000) * (printMinutes / 60) * num(s.kwhPrice);
+    const machineCost = (num(s.machineRate) / 60) * printMinutes;
     const finishingMaterials = num(s.finishingMaterials);
     const packagingCost = num(s.packagingCost);
 
@@ -180,7 +195,7 @@ export function PriceCalculator({
   }
 
   function openCalculation(calc: SavedCalculation) {
-    setS({ ...defaultsFromSettings(settings), ...(calc.inputs as Partial<State>) });
+    setS({ ...defaultsFromSettings(settings), ...migrateInputs(calc.inputs) });
     setLoaded({ id: calc.id, name: calc.name });
     setNameDraft(null);
     setSaveError(null);
@@ -278,7 +293,7 @@ export function PriceCalculator({
 
           <Section title="Energia">
             <Field label="Potência da impressora (W)" value={s.printerPower} onChange={(v) => set("printerPower", v)} />
-            <Field label="Tempo de impressão (h)" value={s.printHours} onChange={(v) => set("printHours", v)} />
+            <Field label="Tempo de impressão (min)" value={s.printMinutes} onChange={(v) => set("printMinutes", v)} />
             <Field label="Preço da eletricidade (€/kWh)" value={s.kwhPrice} onChange={(v) => set("kwhPrice", v)} />
           </Section>
 
