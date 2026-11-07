@@ -120,17 +120,15 @@ Só contas com `is_admin = true` conseguem escrever na tabela `products` —
 interface, por isso mesmo alguém a tentar contornar a página de admin não
 consegue escrever produtos sem essa permissão.
 
-## 5. Emails transacionais (Resend)
+## 5. Emails transacionais (Gmail)
 
 Confirmação de encomenda e atualizações de estado (em produção / enviada /
-entregue) são enviadas por email via [Resend](https://resend.com).
+entregue) são enviadas a partir da conta Gmail da loja, que também recebe um
+aviso de cada encomenda nova.
 
-1. Cria uma conta em [resend.com](https://resend.com) (tem plano gratuito).
-2. Em **API Keys**, cria uma chave e copia para `RESEND_API_KEY`.
-3. Sem verificares o teu próprio domínio, deixa `EMAIL_FROM` como
-   `Guedias <onboarding@resend.dev>` — o Resend permite enviar de teste com
-   este remetente. Quando tiveres um domínio, verifica-o em **Domains** no
-   Resend e muda `EMAIL_FROM` para algo como `Guedias <encomendas@oteudominio.pt>`.
+1. Na conta Google da loja, ativa a **Verificação em 2 passos**.
+2. Em **Palavras-passe de apps**, cria uma e copia-a para `GMAIL_APP_PASSWORD`.
+3. Para enviar de outra conta, define também `GMAIL_USER`.
 4. Se já tinhas a base de dados criada antes desta funcionalidade, corre
    também [`supabase/migrations/0003_order_fulfillment.sql`](supabase/migrations/0003_order_fulfillment.sql)
    no SQL Editor (adiciona o estado de produção/envio às encomendas).
@@ -146,7 +144,7 @@ entregue) são enviadas por email via [Resend](https://resend.com).
    transferência), editar a morada de envio, deixar notas internas e
    reenviar o email de confirmação.
 
-Sem `RESEND_API_KEY` configurada, a loja continua a funcionar normalmente —
+Sem `GMAIL_APP_PASSWORD` configurada, a loja continua a funcionar normalmente —
 só não envia emails (fica um aviso na consola do servidor).
 
 ## 6. Publicar (Vercel)
@@ -154,7 +152,7 @@ só não envia emails (fica um aviso na consola do servidor).
 1. Cria um repositório Git e envia o projeto para o GitHub (ou outro).
 2. Em [vercel.com](https://vercel.com), importa o repositório.
 3. Em **Settings → Environment Variables**, adiciona as mesmas variáveis do
-   `.env.local` (Supabase, MB WAY/IBAN, Resend), e define
+   `.env.local` (Supabase, MB WAY/IBAN, Gmail), e define
    `NEXT_PUBLIC_SITE_URL` para o domínio que o Vercel te der (ex:
    `https://guedias.vercel.app`).
 
@@ -193,7 +191,7 @@ src/
     supabase/                     → Clientes Supabase (browser/servidor/admin)
     payment-details.ts            → Dados de MB WAY/IBAN (a partir de variáveis de ambiente)
     site.ts                       → URL pública do site
-    email.ts                      → Cliente Resend + templates de email
+    email.ts                      → Envio por Gmail + templates de email
     auth.ts                       → Utilizador autenticado atual (+ isAdmin)
 supabase/
   schema.sql                      → Tabelas + Row Level Security (versão completa)
@@ -249,7 +247,7 @@ middleware.ts                     → Refresca a sessão Supabase em cada pedido
   apoio — não escreve nada na base de dados. Os valores (preço do filamento,
   eletricidade, valor à hora, etc.) ficam guardados no `localStorage` do teu
   navegador.
-- `SUPABASE_SERVICE_ROLE_KEY` e `RESEND_API_KEY` nunca devem ter o prefixo
+- `SUPABASE_SERVICE_ROLE_KEY` e `GMAIL_APP_PASSWORD` nunca devem ter o prefixo
   `NEXT_PUBLIC_` nem ser expostas ao browser — só são usadas em Route
   Handlers e Server Actions (servidor). `NEXT_PUBLIC_MBWAY_PHONE` e as
   variáveis `NEXT_PUBLIC_BANK_*` são públicas de propósito — aparecem na

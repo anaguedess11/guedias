@@ -1,5 +1,5 @@
 import "server-only";
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 import { formatPrice } from "@/lib/format";
 import { getSiteUrl } from "@/lib/site";
 import { PAYMENT_METHOD_LABEL, paymentDetails, type PaymentMethod } from "@/lib/payment-details";
@@ -33,16 +33,32 @@ function deliveryBlock(order: EmailOrder): string {
   return line ? `<p ${style}>A enviar para: ${escapeHtml(line)}</p>` : "";
 }
 
-export const isResendConfigured = Boolean(process.env.RESEND_API_KEY);
+const GMAIL_USER = process.env.GMAIL_USER ?? "guediasgeral@gmail.com";
+// O Google mostra a palavra-passe de app com espaços, que não fazem parte dela.
+const GMAIL_APP_PASSWORD = (process.env.GMAIL_APP_PASSWORD ?? "").replace(/\s/g, "");
 
-const FROM_ADDRESS = process.env.EMAIL_FROM ?? "Gu3Dias <onboarding@resend.dev>";
+export const isEmailConfigured = Boolean(GMAIL_APP_PASSWORD);
 
-function getResend(): Resend {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    throw new Error("RESEND_API_KEY não está definida.");
+// Uma falha no email nunca pode impedir a encomenda de ficar registada.
+async function sendMail(to: string, subject: string, html: string, context: string) {
+  if (!isEmailConfigured) {
+    console.warn(`[guedias] GMAIL_APP_PASSWORD não configurada — ${context} não enviado.`);
+    return;
   }
-  return new Resend(apiKey);
+  if (!to) return;
+
+  try {
+    const transport = nodemailer.createTransport({
+      service: "gmail",
+      auth: { user: GMAIL_USER, pass: GMAIL_APP_PASSWORD },
+      connectionTimeout: 10_000,
+      greetingTimeout: 10_000,
+      socketTimeout: 15_000,
+    });
+    await transport.sendMail({ from: { name: "Gu3Dias", address: GMAIL_USER }, to, subject, html });
+  } catch (err) {
+    console.error(`[guedias] falha ao enviar ${context}:`, err);
+  }
 }
 
 export interface EmailOrderItem {
@@ -65,6 +81,7 @@ export interface EmailOrder {
     city?: string | null;
   } | null;
   shipping_method?: string | null;
+  customer_phone?: string | null;
   subtotal_cents: number;
   shipping_cents: number;
   total_cents: number;
@@ -165,12 +182,6 @@ export async function sendOrderReceivedEmail(
   items: EmailOrderItem[],
   paymentMethod: PaymentMethod
 ) {
-  if (!isResendConfigured) {
-    console.warn("[guedias] RESEND_API_KEY não configurada — email de encomenda recebida não enviado.");
-    return;
-  }
-  if (!order.email) return;
-
   const html = layout(
     "Recebemos a tua encomenda",
     `
@@ -186,25 +197,55 @@ export async function sendOrderReceivedEmail(
     `
   );
 
-  try {
-    await getResend().emails.send({
-      from: FROM_ADDRESS,
-      to: order.email,
-      subject: `Encomenda recebida #${order.id.slice(0, 8)} — Gu3Dias`,
-      html,
-    });
-  } catch (err) {
-    console.error("[guedias] falha ao enviar email de encomenda recebida:", err);
-  }
+  await sendMail(
+    order.email,
+    `Encomenda recebida #${order.id.slice(0, 8)} — Gu3Dias`,
+    html,
+    "email de encomenda recebida"
+  );
+}
+
+// Aviso interno: vai para a caixa da loja, com o necessário para contactar o cliente.
+export async function sendNewOrderNotification(
+  order: EmailOrder,
+  items: EmailOrderItem[],
+  paymentMethod: PaymentMethod
+) {
+  const adminUrl = `${getSiteUrl()}/admin/encomendas/${order.id}`;
+  const delivery = isPickup(order.shipping_method)
+    ? `Entrega em mão em ${PICKUP_CITIES[order.shipping_method as ShippingMethod]}`
+    : deliveryBlock(order);
+  const contact = [order.shipping_name, order.email, order.customer_phone]
+    .filter(Boolean)
+    .map((value) => escapeHtml(value as string))
+    .join("<br/>");
+
+  const html = layout(
+    "Nova encomenda",
+    `
+    <p style="color:#5C5650; font-size:14px; line-height:1.6;">
+      Encomenda <strong>#${order.id.slice(0, 8)}</strong>, a aguardar pagamento por
+      ${PAYMENT_METHOD_LABEL[paymentMethod]}.
+    </p>
+    <p style="color:#171412; font-size:14px; line-height:1.6;">${contact}</p>
+    ${itemsTable(items)}
+    ${totalsBlock(order)}
+    <div style="margin-top:20px; font-size:13px; color:#5C5650;">${delivery}</div>
+    <p style="margin-top:20px;">
+      <a href="${adminUrl}" style="color:#8A5B4C; font-size:14px; font-weight:700;">Abrir a encomenda</a>
+    </p>
+    `
+  );
+
+  await sendMail(
+    GMAIL_USER,
+    `Nova encomenda #${order.id.slice(0, 8)} — ${formatPrice(order.total_cents / 100)}`,
+    html,
+    "aviso de nova encomenda"
+  );
 }
 
 export async function sendOrderConfirmationEmail(order: EmailOrder, items: EmailOrderItem[]) {
-  if (!isResendConfigured) {
-    console.warn("[guedias] RESEND_API_KEY não configurada — email de confirmação não enviado.");
-    return;
-  }
-  if (!order.email) return;
-
   const html = layout(
     "O teu pagamento foi confirmado",
     `
@@ -219,16 +260,12 @@ export async function sendOrderConfirmationEmail(order: EmailOrder, items: Email
     `
   );
 
-  try {
-    await getResend().emails.send({
-      from: FROM_ADDRESS,
-      to: order.email,
-      subject: `Pagamento confirmado #${order.id.slice(0, 8)} — Gu3Dias`,
-      html,
-    });
-  } catch (err) {
-    console.error("[guedias] falha ao enviar email de confirmação:", err);
-  }
+  await sendMail(
+    order.email,
+    `Pagamento confirmado #${order.id.slice(0, 8)} — Gu3Dias`,
+    html,
+    "email de confirmação"
+  );
 }
 
 const STATUS_COPY: Record<string, { subject: string; title: string; message: string }> = {
@@ -253,12 +290,6 @@ export async function sendOrderStatusEmail(
   order: EmailOrder,
   status: "in_production" | "shipped" | "delivered"
 ) {
-  if (!isResendConfigured) {
-    console.warn("[guedias] RESEND_API_KEY não configurada — email de atualização não enviado.");
-    return;
-  }
-  if (!order.email) return;
-
   const copy =
     status === "shipped" && isPickup(order.shipping_method)
       ? {
@@ -277,14 +308,10 @@ export async function sendOrderStatusEmail(
     `
   );
 
-  try {
-    await getResend().emails.send({
-      from: FROM_ADDRESS,
-      to: order.email,
-      subject: `${copy.subject} #${order.id.slice(0, 8)} — Gu3Dias`,
-      html,
-    });
-  } catch (err) {
-    console.error("[guedias] falha ao enviar email de atualização:", err);
-  }
+  await sendMail(
+    order.email,
+    `${copy.subject} #${order.id.slice(0, 8)} — Gu3Dias`,
+    html,
+    "email de atualização"
+  );
 }

@@ -3,7 +3,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { formatPrice } from "@/lib/format";
 import { ClearCartOnSuccess } from "@/components/ClearCartOnSuccess";
-import { PAYMENT_METHOD_LABEL, paymentDetails, isPaymentMethod } from "@/lib/payment-details";
+import { PaymentInstructions } from "@/components/PaymentInstructions";
+import { isEmailConfigured } from "@/lib/email";
+import { isPaymentMethod } from "@/lib/payment-details";
 import { isPickup, shippingMethodLabel } from "@/lib/shipping";
 
 interface OrderItemRow {
@@ -106,13 +108,20 @@ export default async function ConfirmacaoPage({
           {paid ? (
             <>
               O teu pagamento foi confirmado e a encomenda vai começar a ser impressa em breve na
-              nossa Creality Hi Combo. Enviámos a confirmação para {order.email}.
+              nossa Creality Hi Combo.
+              {isEmailConfigured && ` Enviámos a confirmação para ${order.email}.`}
+            </>
+          ) : isEmailConfigured ? (
+            <>
+              Registámos a tua encomenda #{order.id.slice(0, 8)} e enviámos as instruções de
+              pagamento para {order.email}. Se não as encontrares, vê a pasta de spam. Assim que
+              confirmarmos a receção, recebes um novo email e a encomenda entra em produção.
             </>
           ) : (
             <>
-              Registámos a tua encomenda #{order.id.slice(0, 8)} e enviámos as instruções de
-              pagamento para {order.email}. Assim que confirmarmos a receção, recebes um novo
-              email e a encomenda entra em produção.
+              Registámos a tua encomenda #{order.id.slice(0, 8)}. Faz já o pagamento com os dados
+              abaixo e guarda esta página. Assim que confirmarmos a receção, a encomenda entra em
+              produção e, se for preciso, contactamos-te.
             </>
           )}
         </p>
@@ -120,30 +129,11 @@ export default async function ConfirmacaoPage({
 
       {!paid && (
         <div className="card mx-auto mt-8 max-w-2xl p-6">
-          <h2 className="text-sm font-semibold text-stone-900">
-            Como pagar por {PAYMENT_METHOD_LABEL[paymentMethod]}
-          </h2>
-          {paymentMethod === "mbway" ? (
-            <p className="mt-2 text-sm leading-relaxed text-stone-900/65">
-              Envia <strong>{formatPrice(order.total_cents / 100)}</strong> para o número{" "}
-              <strong>{paymentDetails.mbwayPhone || "(a confirmar — contacta-nos)"}</strong> via MB
-              WAY.
-            </p>
-          ) : (
-            <div className="mt-2 space-y-1 text-sm leading-relaxed text-stone-900/65">
-              <p>
-                Titular: <strong>{paymentDetails.bankHolder || "(a confirmar — contacta-nos)"}</strong>
-              </p>
-              <p>
-                IBAN: <strong>{paymentDetails.bankIban || "(a confirmar — contacta-nos)"}</strong>
-              </p>
-              {paymentDetails.bankName && <p>Banco: {paymentDetails.bankName}</p>}
-              <p>
-                Valor: <strong>{formatPrice(order.total_cents / 100)}</strong>
-              </p>
-              <p>Descrição: indica #{order.id.slice(0, 8)} para identificarmos o pagamento.</p>
-            </div>
-          )}
+          <PaymentInstructions
+            paymentMethod={paymentMethod}
+            totalCents={order.total_cents}
+            orderId={order.id}
+          />
         </div>
       )}
 

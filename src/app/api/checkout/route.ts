@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { isBankTransferAvailable, isPaymentMethod } from "@/lib/payment-details";
-import { sendOrderReceivedEmail } from "@/lib/email";
+import { sendNewOrderNotification, sendOrderReceivedEmail } from "@/lib/email";
 import {
   isPickup,
   isShippingMethod,
@@ -213,20 +213,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Não foi possível registar a encomenda." }, { status: 500 });
   }
 
-  await sendOrderReceivedEmail(
-    {
-      id: order.id,
-      email,
-      shipping_name: shippingName,
-      shipping_address: shippingAddress,
-      shipping_method: shippingMethod,
-      subtotal_cents: subtotalCents,
-      shipping_cents: shippingCents,
-      total_cents: totalCents,
-    },
-    orderItems,
-    paymentMethod
-  );
+  const emailOrder = {
+    id: order.id,
+    email,
+    shipping_name: shippingName,
+    shipping_address: shippingAddress,
+    shipping_method: shippingMethod,
+    customer_phone: phone || null,
+    subtotal_cents: subtotalCents,
+    shipping_cents: shippingCents,
+    total_cents: totalCents,
+  };
+  await Promise.all([
+    sendOrderReceivedEmail(emailOrder, orderItems, paymentMethod),
+    sendNewOrderNotification(emailOrder, orderItems, paymentMethod),
+  ]);
 
   return NextResponse.json({ orderId: order.id });
 }

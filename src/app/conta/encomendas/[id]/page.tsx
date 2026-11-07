@@ -5,6 +5,8 @@ import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatPrice } from "@/lib/format";
 import { OrderTimeline } from "@/components/OrderTimeline";
+import { PaymentInstructions } from "@/components/PaymentInstructions";
+import { isPaymentMethod } from "@/lib/payment-details";
 import { isPickup, shippingMethodLabel } from "@/lib/shipping";
 
 export const metadata: Metadata = {
@@ -24,6 +26,7 @@ interface OrderRow {
   id: string;
   status: "pending" | "paid" | "failed" | "canceled" | "refunded";
   fulfillment_status: "not_started" | "in_production" | "shipped" | "delivered";
+  payment_method: string;
   subtotal_cents: number;
   shipping_cents: number;
   total_cents: number;
@@ -47,7 +50,7 @@ export default async function ContaOrderDetailPage({ params }: { params: { id: s
   const { data } = await supabase
     .from("orders")
     .select(
-      "id, status, fulfillment_status, subtotal_cents, shipping_cents, total_cents, created_at, shipping_method, shipping_name, shipping_address, order_items(name, qty, price_cents, color, material, personalization)"
+      "id, status, fulfillment_status, payment_method, subtotal_cents, shipping_cents, total_cents, created_at, shipping_method, shipping_name, shipping_address, order_items(name, qty, price_cents, color, material, personalization)"
     )
     .eq("id", params.id)
     .maybeSingle();
@@ -78,6 +81,16 @@ export default async function ContaOrderDetailPage({ params }: { params: { id: s
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_18rem]">
         <div className="space-y-6">
+          {order.status === "pending" && isPaymentMethod(order.payment_method) && (
+            <div className="card p-5">
+              <PaymentInstructions
+                paymentMethod={order.payment_method}
+                totalCents={order.total_cents}
+                orderId={order.id}
+              />
+            </div>
+          )}
+
           <div className="card p-5">
             <h2 className="text-sm font-semibold text-stone-900">Artigos</h2>
             <ul className="mt-3 divide-y divide-black/5 border-t border-black/5">
