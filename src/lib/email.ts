@@ -40,7 +40,7 @@ const GMAIL_APP_PASSWORD = (process.env.GMAIL_APP_PASSWORD ?? "").replace(/\s/g,
 export const isEmailConfigured = Boolean(GMAIL_APP_PASSWORD);
 
 // Uma falha no email nunca pode impedir a encomenda de ficar registada.
-async function sendMail(to: string, subject: string, html: string, context: string) {
+async function sendMail(to: string, subject: string, html: string, context: string, replyTo?: string) {
   if (!isEmailConfigured) {
     console.warn(`[guedias] GMAIL_APP_PASSWORD não configurada — ${context} não enviado.`);
     return;
@@ -55,7 +55,7 @@ async function sendMail(to: string, subject: string, html: string, context: stri
       greetingTimeout: 10_000,
       socketTimeout: 15_000,
     });
-    await transport.sendMail({ from: { name: "Gu3Dias", address: GMAIL_USER }, to, subject, html });
+    await transport.sendMail({ from: { name: "Gu3Dias", address: GMAIL_USER }, to, subject, html, replyTo });
   } catch (err) {
     console.error(`[guedias] falha ao enviar ${context}:`, err);
   }
@@ -245,6 +245,55 @@ export async function sendNewOrderNotification(
   );
 }
 
+// Aviso interno de uma ideia nova. Responder ao email escreve diretamente ao cliente.
+export async function sendCustomRequestNotification(request: {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  description: string;
+  size: string | null;
+  colors: string | null;
+  needed_by: string | null;
+  quantity: number | null;
+  image_paths: string[];
+}) {
+  const details = [
+    ["Tamanho", request.size],
+    ["Cores", request.colors],
+    ["Para quando", request.needed_by],
+    ["Quantidade", request.quantity === null ? null : String(request.quantity)],
+    ["Imagens", request.image_paths.length ? String(request.image_paths.length) : null],
+  ]
+    .filter(([, value]) => value)
+    .map(([label, value]) => `${label}: ${escapeHtml(value as string)}`)
+    .join("<br/>");
+  const contact = [request.name, request.email, request.phone]
+    .filter(Boolean)
+    .map((value) => escapeHtml(value as string))
+    .join("<br/>");
+
+  const html = layout(
+    "Nova ideia",
+    `
+    <p style="color:#171412; font-size:14px; line-height:1.6;">${contact}</p>
+    <p style="color:#5C5650; font-size:14px; line-height:1.6; white-space:pre-wrap;">${escapeHtml(request.description)}</p>
+    ${details ? `<p style="color:#5C5650; font-size:13px; line-height:1.6;">${details}</p>` : ""}
+    <p style="margin-top:20px;">
+      <a href="${getSiteUrl()}/admin/ideias" style="color:#8A5B4C; font-size:14px; font-weight:700;">Abrir no admin</a>
+    </p>
+    `
+  );
+
+  await sendMail(
+    GMAIL_USER,
+    `Nova ideia de ${request.name.slice(0, 60)} — Imagina a tua peça`,
+    html,
+    "aviso de nova ideia",
+    request.email
+  );
+}
+
 export async function sendOrderConfirmationEmail(order: EmailOrder, items: EmailOrderItem[]) {
   const html = layout(
     "O teu pagamento foi confirmado",
@@ -252,7 +301,7 @@ export async function sendOrderConfirmationEmail(order: EmailOrder, items: Email
     <p style="color:#5C5650; font-size:14px; line-height:1.6;">
       Obrigada${firstNameSuffix(order)}! Recebemos o teu
       pagamento e a encomenda <strong>#${order.id.slice(0, 8)}</strong> vai começar a ser impressa em
-      breve na nossa Creality Hi Combo.
+      breve na nossa Impressora 3D.
     </p>
     ${itemsTable(items)}
     ${totalsBlock(order)}

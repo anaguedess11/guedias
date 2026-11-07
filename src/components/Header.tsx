@@ -10,6 +10,7 @@ import { AuthMenu } from "@/components/AuthMenu";
 const NAV_LINKS = [
   { href: "/", label: "Início" },
   { href: "/loja", label: "Loja" },
+  { href: "/imagina", label: "Imagina a tua peça" },
   { href: "/sobre", label: "Sobre" },
 ];
 

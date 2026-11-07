@@ -7,6 +7,7 @@ const LINKS = [
   { href: "/admin", label: "Painel", exact: true },
   { href: "/admin/produtos", label: "Produtos", exact: false },
   { href: "/admin/encomendas", label: "Encomendas", exact: false },
+  { href: "/admin/ideias", label: "Ideias", exact: false },
   { href: "/admin/filamentos", label: "Filamentos", exact: false },
   { href: "/admin/calculadora", label: "Calculadora", exact: false },
 ];
@@ -15,7 +16,7 @@ export function AdminNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="mb-8 flex gap-2 border-b border-black/5 pb-3">
+    <nav className="mb-8 flex flex-wrap gap-2 border-b border-black/5 pb-3">
       {LINKS.map((link) => {
         const active = link.exact ? pathname === link.href : pathname.startsWith(link.href);
         return (

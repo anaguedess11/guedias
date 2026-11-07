@@ -62,7 +62,11 @@ export function Footer() {
                 {CONTACT_EMAIL}
               </a>
             </li>
-            <li>Tens uma ideia? Fala connosco.</li>
+            <li>
+              <Link href="/imagina" className="transition-colors hover:text-clay-600">
+                Tens uma ideia? Imagina a tua peça.
+              </Link>
+            </li>
           </ul>
         </div>
       </div>

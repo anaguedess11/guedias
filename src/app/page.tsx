@@ -4,8 +4,6 @@ import { ProductCard } from "@/components/ProductCard";
 import { ProductVisual } from "@/components/ProductVisual";
 import { PrintProcessScroll } from "@/components/PrintProcessScroll";
 
-const CONTACT_EMAIL = "guediasgeral@gmail.com";
-
 const PROCESS_STEPS = [
   {
     title: "Modelação",
@@ -153,12 +151,12 @@ export default async function HomePage() {
           <p className="max-w-lg text-sm leading-relaxed text-white/70 sm:text-base">
             Conta-nos o que imaginas e vemos juntos como a transformar numa peça real.
           </p>
-          <a
-            href={`mailto:${CONTACT_EMAIL}`}
+          <Link
+            href="/imagina"
             className="btn bg-white text-pine-800 hover:-translate-y-0.5 hover:bg-clay-100 active:translate-y-0"
           >
-            Falar connosco
-          </a>
+            Imagina a tua peça
+          </Link>
         </div>
       </section>
     </div>
