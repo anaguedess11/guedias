@@ -171,7 +171,8 @@ export function ProductForm({
       customization_label: form.customizable ? form.customizationLabel.trim() || null : null,
       customization_note: form.customizable ? form.customizationNote.trim() || null : null,
       profile: profileValues,
-      print_time_hours: parseFloat(form.printTimeHours) || 1,
+      // 0 significa "por definir": a página do produto não mostra o tempo.
+      print_time_hours: parseFloat(form.printTimeHours) || 0,
       dimensions: form.dimensions.trim(),
       featured: form.featured,
       tags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),

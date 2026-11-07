@@ -37,7 +37,7 @@ export function ProductCard({ product }: { product: Product }) {
           </h3>
           <div className="mt-2.5 flex items-center justify-between">
             <span className="font-display text-base font-semibold text-clay-600">
-              {formatPrice(product.price)}
+              {product.price > 0 ? formatPrice(product.price) : "Preço em breve"}
             </span>
             <div className="flex -space-x-1.5">
               {product.colors.slice(0, 4).map((c) => (

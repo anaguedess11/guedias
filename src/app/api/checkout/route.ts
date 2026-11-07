@@ -137,6 +137,13 @@ export async function POST(request: Request) {
     if (!product) {
       return NextResponse.json({ error: "Produto não encontrado." }, { status: 400 });
     }
+    // Produto ainda sem preço: não pode ser encomendado de graça.
+    if (product.price_cents <= 0) {
+      return NextResponse.json(
+        { error: `${product.name} ainda não está disponível para compra.` },
+        { status: 400 }
+      );
+    }
 
     const colorNames = ((product.colors as { name: string }[]) ?? []).map((c) => c.name);
     if (colorNames.length > 0 && !colorNames.includes(item.color)) {

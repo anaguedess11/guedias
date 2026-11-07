@@ -68,16 +68,34 @@ export default async function ProductPage({ params }: { params: { slug: string }
 
           <div className="mt-5 flex items-baseline gap-3">
             <span className="font-display text-2xl font-semibold text-clay-600">
-              {formatPrice(product.price)}
+              {product.price > 0 ? formatPrice(product.price) : "Preço em breve"}
             </span>
             <span className="text-xs text-stone-900/45">
-              Tempo médio de impressão: {product.printTimeHours}h
-              {product.dimensions ? ` · ${product.dimensions}` : ""}
+              {[
+                product.printTimeHours > 0 ? `Tempo médio de impressão: ${product.printTimeHours}h` : "",
+                product.dimensions,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
             </span>
           </div>
 
           <div className="mt-8 border-t border-black/5 pt-8">
-            <AddToCartForm product={product} />
+            {product.price > 0 ? (
+              <AddToCartForm product={product} />
+            ) : (
+              <p className="text-sm leading-relaxed text-stone-900/65">
+                Esta peça ainda não está disponível para compra online. Se tiveres interesse, escreve-nos
+                para{" "}
+                <a
+                  href="mailto:guediasgeral@gmail.com"
+                  className="font-medium text-clay-600 underline underline-offset-2"
+                >
+                  guediasgeral@gmail.com
+                </a>
+                .
+              </p>
+            )}
             <div className="mt-4">
               <FavoriteButton productId={product.id} variant="inline" />
             </div>

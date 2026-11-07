@@ -20,6 +20,9 @@ yarn-error.log*
 # local env files
 .env*.local
 
+# fotos originais dos produtos (o site usa as cópias no Supabase)
+/Produtos/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
