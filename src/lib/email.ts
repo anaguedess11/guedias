@@ -19,19 +19,30 @@ function firstNameSuffix(order: EmailOrder): string {
   return order.shipping_name ? `, ${escapeHtml(order.shipping_name.split(" ")[0])}` : "";
 }
 
-function deliveryBlock(order: EmailOrder): string {
+function pickupCity(order: EmailOrder): string {
+  return PICKUP_CITIES[order.shipping_method as ShippingMethod] ?? "";
+}
+
+// O passo seguinte muda depois do pagamento: o bloco não pode prometer o que já aconteceu.
+function deliveryBlock(order: EmailOrder, paid = false): string {
   const style = 'style="margin-top:20px; font-size:13px; color:#8A8480;"';
   if (isPickup(order.shipping_method)) {
-    const city = PICKUP_CITIES[order.shipping_method as ShippingMethod];
-    return `<p ${style}>Entrega em mão em ${city}. Depois de confirmarmos o pagamento, contactamos-te para combinar o local e a hora.</p>`;
+    const next = paid
+      ? "Quando a tua peça estiver pronta, contactamos-te para combinar o local e a hora."
+      : "Depois de confirmarmos o pagamento, tratamos da tua peça e, quando estiver pronta, contactamos-te para combinar o local e a hora.";
+    return `<p ${style}>Entrega em mão em ${pickupCity(order)}. ${next}</p>`;
   }
   const address = order.shipping_address;
   if (!address) return "";
   const line = [address.line1, address.line2, [address.postal_code, address.city].filter(Boolean).join(" ")]
     .filter(Boolean)
     .join(", ");
-  return line ? `<p ${style}>A enviar para: ${escapeHtml(line)}</p>` : "";
+  if (!line) return "";
+  return `<p ${style}>Morada de envio: ${escapeHtml(line)}.${paid ? " Avisamos-te por email quando a encomenda for enviada." : ""}</p>`;
 }
+
+const HELP_LINE =
+  '<p style="margin:20px 0 0; font-size:13px; color:#8A8480;">Alguma dúvida? Basta responderes a este email.</p>';
 
 const GMAIL_USER = process.env.GMAIL_USER ?? "guediasgeral@gmail.com";
 // O Google mostra a palavra-passe de app com espaços, que não fazem parte dela.
@@ -186,14 +197,14 @@ export async function sendOrderReceivedEmail(
     "Recebemos a tua encomenda",
     `
     <p style="color:#5C5650; font-size:14px; line-height:1.6;">
-      Obrigada${firstNameSuffix(order)}! A tua encomenda
-      <strong>#${order.id.slice(0, 8)}</strong> está registada e fica reservada assim que
-      confirmarmos o pagamento por ${PAYMENT_METHOD_LABEL[paymentMethod]}.
+      Obrigada${firstNameSuffix(order)}! Registámos a tua encomenda
+      <strong>#${order.id.slice(0, 8)}</strong>. Para começarmos a prepará-la, só falta o pagamento.
     </p>
+    ${paymentInstructionsBlock(paymentMethod, order.total_cents)}
     ${itemsTable(items)}
     ${totalsBlock(order)}
-    ${paymentInstructionsBlock(paymentMethod, order.total_cents)}
     ${deliveryBlock(order)}
+    ${HELP_LINE}
     `
   );
 
@@ -301,11 +312,12 @@ export async function sendOrderConfirmationEmail(order: EmailOrder, items: Email
     <p style="color:#5C5650; font-size:14px; line-height:1.6;">
       Obrigada${firstNameSuffix(order)}! Recebemos o teu
       pagamento e a encomenda <strong>#${order.id.slice(0, 8)}</strong> vai começar a ser impressa em
-      breve na nossa Impressora 3D.
+      breve na nossa impressora 3D.
     </p>
     ${itemsTable(items)}
     ${totalsBlock(order)}
-    ${deliveryBlock(order)}
+    ${deliveryBlock(order, true)}
+    ${HELP_LINE}
     `
   );
 
@@ -317,43 +329,51 @@ export async function sendOrderConfirmationEmail(order: EmailOrder, items: Email
   );
 }
 
-const STATUS_COPY: Record<string, { subject: string; title: string; message: string }> = {
-  in_production: {
-    subject: "A tua encomenda está em produção",
-    title: "Em produção",
-    message: "A tua encomenda entrou em produção — está a ser impressa camada a camada, agora mesmo.",
-  },
-  shipped: {
-    subject: "A tua encomenda foi enviada",
-    title: "Enviada",
-    message: "A tua encomenda foi enviada e está a caminho.",
-  },
-  delivered: {
-    subject: "A tua encomenda foi entregue",
-    title: "Entregue",
-    message: "A tua encomenda foi entregue. Esperamos que gostes — obrigada por comprares Gu3Dias!",
-  },
-};
+function statusCopy(order: EmailOrder, status: "in_production" | "shipped" | "delivered") {
+  const pickup = isPickup(order.shipping_method);
+  switch (status) {
+    case "in_production":
+      return {
+        subject: "A tua encomenda está em produção",
+        title: "Em produção",
+        message: pickup
+          ? `A tua encomenda já está em produção. Quando estiver pronta, contactamos-te para combinar a entrega em ${pickupCity(order)}.`
+          : "A tua encomenda já está em produção. Avisamos-te por email quando for enviada.",
+      };
+    case "shipped":
+      return pickup
+        ? {
+            subject: "A tua encomenda está pronta",
+            title: "A tua encomenda está pronta",
+            message: `A tua peça já está pronta! Vamos contactar-te em breve para combinar o local e a hora da entrega em ${pickupCity(order)}.`,
+          }
+        : {
+            subject: "A tua encomenda foi enviada",
+            title: "A tua encomenda foi enviada",
+            message: "A tua encomenda já foi enviada e está a caminho.",
+          };
+    case "delivered":
+      return {
+        subject: "A tua encomenda foi entregue",
+        title: "A tua encomenda foi entregue",
+        message: "A tua encomenda foi entregue. Esperamos que gostes! Obrigada por comprares Gu3Dias.",
+      };
+  }
+}
 
 export async function sendOrderStatusEmail(
   order: EmailOrder,
   status: "in_production" | "shipped" | "delivered"
 ) {
-  const copy =
-    status === "shipped" && isPickup(order.shipping_method)
-      ? {
-          subject: "A tua encomenda está pronta",
-          title: "Pronta para entrega",
-          message: "A tua encomenda está pronta. Vamos contactar-te para combinar a entrega em mão.",
-        }
-      : STATUS_COPY[status];
+  const copy = statusCopy(order, status);
   const html = layout(
     copy.title,
     `
     <p style="color:#5C5650; font-size:14px; line-height:1.6;">
-      Olá${firstNameSuffix(order)}. ${copy.message}
+      Olá${firstNameSuffix(order)}! ${copy.message}
     </p>
     <p style="color:#8A8480; font-size:13px; margin-top:16px;">Encomenda #${order.id.slice(0, 8)}</p>
+    ${HELP_LINE}
     `
   );
 

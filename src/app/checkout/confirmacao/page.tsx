@@ -175,8 +175,10 @@ export default async function ConfirmacaoPage({
 
         {isPickup(order.shipping_method) && (
           <div className="mt-4 rounded-lg bg-stone-50 px-4 py-3 text-xs text-stone-900/55">
-            {shippingMethodLabel(order.shipping_method)}. Depois de confirmarmos o pagamento,
-            contactamos-te para combinar o local e a hora.
+            {shippingMethodLabel(order.shipping_method)}.{" "}
+            {paid
+              ? "Quando a tua peça estiver pronta, contactamos-te para combinar o local e a hora."
+              : "Depois de confirmarmos o pagamento, tratamos da tua peça e, quando estiver pronta, contactamos-te para combinar o local e a hora."}
           </div>
         )}
         {addr && (
