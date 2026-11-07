@@ -233,6 +233,23 @@ export async function registerRefund(
   return { ok: true };
 }
 
+// Apaga de vez a encomenda e os artigos (em cascata). Não envia nenhum email ao cliente.
+export async function deleteOrder(orderId: string): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  if (!admin) return { error: "Sem permissões de administração." };
+
+  const { data, error } = await createAdminClient().from("orders").delete().eq("id", orderId).select("id");
+  if (error) {
+    console.error("[guedias] erro ao eliminar encomenda:", error.message);
+    return { error: "Não foi possível eliminar a encomenda." };
+  }
+  if (!data?.length) return { error: "Encomenda não encontrada." };
+
+  revalidatePath("/admin");
+  revalidateOrder(orderId);
+  return { ok: true };
+}
+
 export async function resendConfirmationEmail(orderId: string): Promise<ActionResult> {
   const admin = await requireAdmin();
   if (!admin) return { error: "Sem permissões de administração." };

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { formatPrice } from "@/lib/format";
 import {
   cancelOrder,
+  deleteOrder,
   markOrderPaid,
   registerRefund,
   resendConfirmationEmail,
@@ -63,6 +64,26 @@ export function OrderActions({ order }: OrderActionsProps) {
     return true;
   }
 
+  async function handleDelete() {
+    const warning =
+      order.status === "paid" || order.status === "refunded"
+        ? "Esta encomenda conta nas vendas: ao eliminá-la, os totais do painel mudam. "
+        : "";
+    const number = order.id.slice(0, 8);
+    if (!window.confirm(`Eliminar a encomenda #${number}? ${warning}Não é possível recuperar.`)) return;
+
+    setBusy("delete");
+    setFeedback(null);
+    const result = await deleteOrder(order.id);
+    if (result.error) {
+      setBusy(null);
+      setFeedback({ kind: "error", message: result.error });
+      return;
+    }
+    router.push("/admin/encomendas");
+    router.refresh();
+  }
+
   return (
     <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
       <div className="card space-y-3 p-5">
@@ -118,6 +139,15 @@ export function OrderActions({ order }: OrderActionsProps) {
             {busy === "cancel" ? "A cancelar…" : "Cancelar encomenda"}
           </button>
         )}
+
+        <button
+          type="button"
+          disabled={busy !== null}
+          onClick={handleDelete}
+          className="btn-ghost w-full text-red-600 hover:bg-red-50"
+        >
+          {busy === "delete" ? "A eliminar…" : "Eliminar encomenda"}
+        </button>
       </div>
 
       {canRefund && (
