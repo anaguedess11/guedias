@@ -14,6 +14,9 @@ export const paymentDetails = {
   bankName: process.env.NEXT_PUBLIC_BANK_NAME ?? "",
 };
 
+// A transferência só é oferecida ao cliente depois de o IBAN estar preenchido.
+export const isBankTransferAvailable = Boolean(paymentDetails.bankIban && paymentDetails.bankHolder);
+
 export function isPaymentMethod(value: unknown): value is PaymentMethod {
   return value === "mbway" || value === "transferencia";
 }

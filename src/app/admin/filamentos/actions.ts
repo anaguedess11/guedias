@@ -13,6 +13,7 @@ interface ActionResult {
 function validateFilament(input: FilamentWriteInput): string | null {
   if (!input.name.trim()) return "O nome é obrigatório.";
   if (!input.color.trim()) return "A cor é obrigatória.";
+  if (!/^#[0-9a-fA-F]{6}$/.test(input.hex)) return "Escolhe uma cor válida.";
   if (!input.material.trim()) return "O tipo de material é obrigatório.";
   if (!Number.isFinite(input.price_per_kg_cents) || input.price_per_kg_cents <= 0) {
     return "O preço por kg tem de ser maior que zero.";

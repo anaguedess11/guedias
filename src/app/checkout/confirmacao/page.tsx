@@ -4,6 +4,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { formatPrice } from "@/lib/format";
 import { ClearCartOnSuccess } from "@/components/ClearCartOnSuccess";
 import { PAYMENT_METHOD_LABEL, paymentDetails, isPaymentMethod } from "@/lib/payment-details";
+import { isPickup, shippingMethodLabel } from "@/lib/shipping";
 
 interface OrderItemRow {
   id: string;
@@ -27,6 +28,7 @@ interface OrderRow {
     postal_code?: string | null;
     city?: string | null;
   } | null;
+  shipping_method: string | null;
   subtotal_cents: number;
   shipping_cents: number;
   total_cents: number;
@@ -62,7 +64,7 @@ export default async function ConfirmacaoPage({
   const { data } = await admin
     .from("orders")
     .select(
-      "id, status, payment_method, email, shipping_name, shipping_address, subtotal_cents, shipping_cents, total_cents, order_items(id, name, qty, price_cents, color, material, personalization)"
+      "id, status, payment_method, email, shipping_name, shipping_address, shipping_method, subtotal_cents, shipping_cents, total_cents, order_items(id, name, qty, price_cents, color, material, personalization)"
     )
     .eq("id", orderId)
     .maybeSingle();
@@ -170,7 +172,7 @@ export default async function ConfirmacaoPage({
             <span>{formatPrice(order.subtotal_cents / 100)}</span>
           </div>
           <div className="flex justify-between text-stone-900/65">
-            <span>Envio</span>
+            <span>{isPickup(order.shipping_method) ? "Entrega em mão" : "Envio"}</span>
             <span>
               {order.shipping_cents === 0 ? "Grátis" : formatPrice(order.shipping_cents / 100)}
             </span>
@@ -181,6 +183,12 @@ export default async function ConfirmacaoPage({
           <span>{formatPrice(order.total_cents / 100)}</span>
         </div>
 
+        {isPickup(order.shipping_method) && (
+          <div className="mt-4 rounded-lg bg-stone-50 px-4 py-3 text-xs text-stone-900/55">
+            {shippingMethodLabel(order.shipping_method)}. Depois de confirmarmos o pagamento,
+            contactamos-te para combinar o local e a hora.
+          </div>
+        )}
         {addr && (
           <div className="mt-4 rounded-lg bg-stone-50 px-4 py-3 text-xs text-stone-900/55">
             A enviar para: {order.shipping_name}, {addr.line1}

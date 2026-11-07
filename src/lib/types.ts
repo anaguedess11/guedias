@@ -9,6 +9,8 @@ export type ShapeProfile = number[];
 export interface ProductColor {
   name: string;
   hex: string;
+  /** Material do filamento desta cor. O cliente só escolhe a cor. */
+  material?: string;
 }
 
 export interface Product {
@@ -23,7 +25,9 @@ export interface Product {
   details: string[];
   materials: string[];
   colors: ProductColor[];
+  /** Foto de capa: é sempre a primeira de `images`. */
   imageUrl?: string;
+  images: string[];
   customizable: boolean;
   customizationLabel?: string;
   customizationNote?: string;
@@ -44,6 +48,8 @@ export interface CartItem {
   material: string;
   personalization?: string;
   profile: ShapeProfile;
+  imageUrl?: string;
+  colorHex?: string;
   qty: number;
 }
 
@@ -67,6 +73,7 @@ export interface ProductWriteInput {
   materials: string[];
   colors: ProductColor[];
   image_url: string | null;
+  image_urls: string[];
   customizable: boolean;
   customization_label: string | null;
   customization_note: string | null;
@@ -85,6 +92,7 @@ export interface Filament {
   name: string;
   brand: string | null;
   color: string;
+  hex: string;
   material: string;
   pricePerKg: number;
   notes: string | null;
@@ -95,6 +103,7 @@ export interface FilamentWriteInput {
   name: string;
   brand: string | null;
   color: string;
+  hex: string;
   material: string;
   price_per_kg_cents: number;
   notes: string | null;

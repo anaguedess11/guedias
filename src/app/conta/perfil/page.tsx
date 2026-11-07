@@ -7,7 +7,7 @@ import { ProfileForm } from "@/components/ProfileForm";
 import type { ProfileInput } from "@/app/conta/actions";
 
 export const metadata: Metadata = {
-  title: "Editar perfil — Guedias",
+  title: "Editar perfil — Gu3Dias",
 };
 
 export default async function PerfilPage() {

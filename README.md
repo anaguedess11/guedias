@@ -1,7 +1,7 @@
-# Guedias — Loja de produtos impressos em 3D
+# Gu3Dias — Criamos o que imaginas
 
-Loja online da Guedias (marca fictícia de produtos impressos em 3D, numa
-impressora Creality Hi Combo). Construída com **Next.js 14 (App Router) +
+Loja online da Gu3Dias (produtos impressos em 3D, numa impressora Creality
+Hi Combo). Construída com **Next.js 14 (App Router) +
 TypeScript + Tailwind CSS**, com:
 
 - **Base de dados real** — [Supabase](https://supabase.com) (Postgres) para
@@ -36,7 +36,7 @@ vazia — porque ainda não há Supabase ligado. Os passos abaixo resolvem isso.
    cria as tabelas `categories`, `products`, `profiles`, `orders`,
    `order_items` e as respetivas regras de segurança (Row Level Security).
 3. Faz o mesmo com [`supabase/seed.sql`](supabase/seed.sql) — carrega as 4
-   categorias e os 18 produtos fictícios para veres a loja com conteúdo.
+   categorias. Os produtos criam-se em `/admin/produtos`.
 4. Vai a **Project Settings → API** e copia:
    - `Project URL` → `NEXT_PUBLIC_SUPABASE_URL`
    - `anon public` key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
@@ -203,7 +203,9 @@ supabase/
   migrations/0005_product_images_storage.sql → Incremento: bucket de Storage p/ fotos de produtos
   migrations/0006_customer_account.sql → Incremento: morada no perfil, cliente Stripe, favoritos
   migrations/0007_manual_payments.sql → Incremento: payment_method (MB WAY/transferência), remove colunas Stripe
-  seed.sql                        → Categorias e 18 produtos fictícios
+  migrations/0008_filaments_calculator.sql → Incremento: filamentos e calculadora
+  migrations/0009_publish_ready.sql → Incremento: segurança de is_admin, várias fotos, cor dos filamentos, telefone na encomenda
+  seed.sql                        → Categorias
 middleware.ts                     → Refresca a sessão Supabase em cada pedido
 ```
 
@@ -227,10 +229,14 @@ middleware.ts                     → Refresca a sessão Supabase em cada pedido
 
 ## Notas
 
-- Por omissão, as imagens dos produtos são geradas visualmente (silhuetas em
-  "camadas", como uma impressão FDM). Em `/admin`, o campo "Foto (URL)" deixa
-  usar uma fotografia real em vez disso — se ficar vazio, mantém-se o
-  placeholder gerado.
+- Cada produto pode ter até 10 fotos, carregadas em `/admin/produtos`; a
+  primeira é a capa. Sem fotos, mostra-se uma silhueta gerada em "camadas".
+- As cores de um produto escolhem-se a partir dos filamentos registados em
+  `/admin/filamentos`. O cliente só vê as cores; o material fica na encomenda.
+- Entrega em mão em Coimbra ou Santarém: grátis, com pagamento antecipado. A
+  encomenda guarda o telemóvel do cliente para combinar a entrega.
+- O remetente da etiqueta de envio está em
+  `src/app/admin/encomendas/[id]/etiqueta/page.tsx`.
 - As categorias (`src/data/categories.ts`) ficam fixas no código por
   simplicidade — são só 4 e raramente mudam. Os produtos, esses, vivem
   inteiramente na base de dados e são geridos em `/admin`.
@@ -253,12 +259,11 @@ middleware.ts                     → Refresca a sessão Supabase em cada pedido
   `public/logo-wordmark.png`). Todos os tons vivem como variáveis CSS em
   `src/app/globals.css` (`:root`, triplos RGB) e são mapeados para o
   Tailwind em `tailwind.config.ts` — mudas um tom num sítio e o site inteiro
-  acompanha. Tipografia: Fraunces (títulos) + Inter (texto), via `next/font`
-  em `src/app/layout.tsx`.
+  acompanha. Tipografia: Playfair Display (títulos) + Inter (texto), via
+  `next/font` em `src/app/layout.tsx`.
 
 ## Próximos passos sugeridos
 
-- Upload de fotografias (Supabase Storage) em vez de colar um URL.
 - Gestão de stock/disponibilidade por produto.
 - Número de seguimento (tracking) no email de "encomenda enviada".
 - Alargar o checkout a mais países (hoje assume sempre Portugal).

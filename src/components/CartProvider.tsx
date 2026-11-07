@@ -21,6 +21,8 @@ interface AddItemInput {
   material: string;
   personalization?: string;
   profile: number[];
+  imageUrl?: string;
+  colorHex?: string;
   qty: number;
 }
 
@@ -84,6 +86,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           material: input.material,
           personalization: input.personalization,
           profile: input.profile,
+          imageUrl: input.imageUrl,
+          colorHex: input.colorHex,
           qty: input.qty,
         },
       ];

@@ -40,7 +40,10 @@ export function LojaClient({ products }: { products: Product[] }) {
         p.shortDescription.toLowerCase().includes(query.trim().toLowerCase());
       return matchesCategory && matchesQuery;
     });
-  }, [active, query]);
+  }, [products, active, query]);
+
+  // Só mostra categorias que têm peças à venda.
+  const availableCategories = categories.filter((c) => products.some((p) => p.category === c.key));
 
   return (
     <div className="container-page py-10 sm:py-14">
@@ -50,15 +53,14 @@ export function LojaClient({ products }: { products: Product[] }) {
           Todos os produtos
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-stone-900/60 sm:text-base">
-          {products.length} peças impressas em 3D, organizadas por categoria.
-          Explora, filtra e encontra o objeto certo para ti.
+          Peças impressas em 3D, feitas por encomenda. Encontra a certa para ti.
         </p>
       </div>
 
       <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap gap-2">
           <Chip label="Todos" active={active === "todos"} onClick={() => selectCategory("todos")} />
-          {categories.map((c) => (
+          {availableCategories.map((c) => (
             <Chip
               key={c.key}
               label={c.label}
@@ -110,9 +112,9 @@ function Chip({
   return (
     <button
       onClick={onClick}
-      className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+      className={`rounded-md border px-4 py-2 text-sm font-medium transition-colors ${
         active
-          ? "border-clay-500 bg-clay-500 text-white"
+          ? "border-pine-800 bg-pine-800 text-white"
           : "border-black/10 bg-white text-stone-900/70 hover:border-clay-500/40 hover:text-stone-900"
       }`}
     >

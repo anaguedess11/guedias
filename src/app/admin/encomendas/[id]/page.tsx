@@ -6,9 +6,10 @@ import { formatPrice } from "@/lib/format";
 import { OrderStatusSelect } from "@/components/OrderStatusSelect";
 import { OrderActions } from "@/components/OrderActions";
 import { PAYMENT_METHOD_LABEL, isPaymentMethod } from "@/lib/payment-details";
+import { isPickup, shippingMethodLabel } from "@/lib/shipping";
 
 export const metadata: Metadata = {
-  title: "Encomenda — Guedias",
+  title: "Encomenda — Gu3Dias",
 };
 
 interface OrderItemRow {
@@ -40,6 +41,7 @@ interface OrderRow {
     city?: string | null;
   } | null;
   shipping_method: string | null;
+  customer_phone: string | null;
   admin_notes: string | null;
   order_items: OrderItemRow[];
 }
@@ -65,7 +67,7 @@ export default async function AdminOrderDetailPage({ params }: { params: { id: s
   const { data } = await supabase
     .from("orders")
     .select(
-      "id, email, status, payment_method, fulfillment_status, subtotal_cents, shipping_cents, total_cents, refunded_cents, currency, created_at, shipping_name, shipping_address, shipping_method, admin_notes, order_items(name, qty, price_cents, color, material, personalization)"
+      "id, email, status, payment_method, fulfillment_status, subtotal_cents, shipping_cents, total_cents, refunded_cents, currency, created_at, shipping_name, shipping_address, shipping_method, customer_phone, admin_notes, order_items(name, qty, price_cents, color, material, personalization)"
     )
     .eq("id", params.id)
     .maybeSingle();
@@ -75,6 +77,7 @@ export default async function AdminOrderDetailPage({ params }: { params: { id: s
 
   const addr = order.shipping_address;
   const refunded = order.refunded_cents ?? 0;
+  const pickup = isPickup(order.shipping_method);
 
   return (
     <div>
@@ -144,7 +147,7 @@ export default async function AdminOrderDetailPage({ params }: { params: { id: s
                 <dd>{formatPrice(order.subtotal_cents / 100)}</dd>
               </div>
               <div className="flex justify-between text-stone-900/60">
-                <dt>Envio {order.shipping_method ? `(${order.shipping_method})` : ""}</dt>
+                <dt>{shippingMethodLabel(order.shipping_method) || "Envio"}</dt>
                 <dd>{order.shipping_cents === 0 ? "Grátis" : formatPrice(order.shipping_cents / 100)}</dd>
               </div>
               <div className="flex justify-between border-t border-black/5 pt-1.5 font-semibold text-stone-900">
@@ -163,6 +166,15 @@ export default async function AdminOrderDetailPage({ params }: { params: { id: s
           <div className="card p-5">
             <h2 className="text-sm font-semibold text-stone-900">Cliente</h2>
             <p className="mt-2 text-sm text-stone-900/70">{order.email || "—"}</p>
+            {order.customer_phone && (
+              <p className="mt-1 text-sm text-stone-900/70">Telemóvel: {order.customer_phone}</p>
+            )}
+            {pickup && (
+              <p className="mt-3 rounded-lg bg-clay-50 px-3 py-2 text-sm text-clay-800">
+                <span className="block">{order.shipping_name}</span>
+                {shippingMethodLabel(order.shipping_method)}: contactar o cliente depois do pagamento.
+              </p>
+            )}
             {addr && (
               <p className="mt-1 text-sm text-stone-900/70">
                 {order.shipping_name && <span className="block">{order.shipping_name}</span>}
@@ -171,12 +183,14 @@ export default async function AdminOrderDetailPage({ params }: { params: { id: s
                 {[addr.postal_code, addr.city].filter(Boolean).join(" ")}
               </p>
             )}
-            <Link
-              href={`/admin/encomendas/${order.id}/etiqueta`}
-              className="btn-secondary mt-4 w-full"
-            >
-              Imprimir etiqueta de envio
-            </Link>
+            {!pickup && (
+              <Link
+                href={`/admin/encomendas/${order.id}/etiqueta`}
+                className="btn-secondary mt-4 w-full"
+              >
+                Imprimir etiqueta de envio
+              </Link>
+            )}
           </div>
 
           <div className="card p-5">
@@ -192,6 +206,7 @@ export default async function AdminOrderDetailPage({ params }: { params: { id: s
         <OrderActions
           order={{
             id: order.id,
+            pickup,
             status: order.status,
             total_cents: order.total_cents,
             refunded_cents: refunded,

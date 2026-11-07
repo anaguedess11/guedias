@@ -3,20 +3,22 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PrintButton } from "@/components/PrintButton";
+import { shippingMethodLabel } from "@/lib/shipping";
 
 export const metadata: Metadata = {
-  title: "Etiqueta de envio — Guedias",
+  title: "Etiqueta de envio — Gu3Dias",
 };
 
 /* ─────────────────────────────────────────────────────────────
-   REMETENTE — preenche com a morada real da Guedias.
+   REMETENTE — acrescenta a morada de devolução em `lines` e `postalCity`.
    ───────────────────────────────────────────────────────────── */
 const SENDER = {
-  name: "Guedias",
-  lines: ["[Rua e número]", "[Andar / porta — opcional]"],
-  postalCity: "[Código postal] [Localidade]",
+  name: "Gu3Dias",
+  lines: [] as string[],
+  postalCity: "",
   country: "Portugal",
-  phone: "[Telefone — opcional]",
+  phone: "",
+  email: "guediasgeral@gmail.com",
 };
 
 interface OrderRow {
@@ -91,10 +93,7 @@ export default async function EtiquetaPage({ params }: { params: { id: string } 
       </div>
 
       <p className="print-hide mb-4 text-sm text-stone-900/55">
-        Pré-visualização da etiqueta (100 × 150 mm). Confirma que a morada do
-        remetente está preenchida em{" "}
-        <code className="rounded bg-black/5 px-1">src/app/admin/encomendas/[id]/etiqueta/page.tsx</code>
-        .
+        Pré-visualização da etiqueta (100 × 150 mm).
       </p>
 
       {/* A etiqueta */}
@@ -103,7 +102,7 @@ export default async function EtiquetaPage({ params }: { params: { id: string } 
         style={{ width: "100mm", height: "150mm", padding: "7mm" }}
       >
         <div className="flex items-start justify-between border-b-2 border-black pb-2">
-          <span className="font-display text-lg font-bold tracking-tight">Guedias</span>
+          <span className="font-display text-lg font-bold tracking-tight">Gu3Dias</span>
           <span className="text-[10px] font-semibold uppercase tracking-[0.15em]">
             Etiqueta de envio
           </span>
@@ -116,9 +115,10 @@ export default async function EtiquetaPage({ params }: { params: { id: string } 
             {SENDER.lines.filter(Boolean).map((line, i) => (
               <p key={i}>{line}</p>
             ))}
-            <p>{SENDER.postalCity}</p>
+            {SENDER.postalCity && <p>{SENDER.postalCity}</p>}
             <p>{SENDER.country}</p>
             {SENDER.phone && <p>Tel.: {SENDER.phone}</p>}
+            <p>{SENDER.email}</p>
           </div>
         </div>
 
@@ -148,7 +148,7 @@ export default async function EtiquetaPage({ params }: { params: { id: string } 
             </div>
             <div className="text-right text-[10px] leading-tight">
               <p>{date}</p>
-              {order.shipping_method && <p>{order.shipping_method}</p>}
+              {order.shipping_method && <p>{shippingMethodLabel(order.shipping_method)}</p>}
             </div>
           </div>
         </div>

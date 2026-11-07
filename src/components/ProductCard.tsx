@@ -42,7 +42,7 @@ export function ProductCard({ product }: { product: Product }) {
             <div className="flex -space-x-1.5">
               {product.colors.slice(0, 4).map((c) => (
                 <span
-                  key={c.hex}
+                  key={c.name}
                   className="h-4 w-4 rounded-full border-2 border-white shadow-sm"
                   style={{ backgroundColor: c.hex }}
                   title={c.name}

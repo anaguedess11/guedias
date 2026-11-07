@@ -24,9 +24,9 @@ const TOTAL_H = BED_Y - TOP_Y;
 const LAYER_H = TOTAL_H / LAYER_COUNT;
 const MAX_HALF = 76;
 
-// Cores da marca (azul-marinho + coral) em RGB, para SVG e filtros.
-const NAVY = "11, 30, 61";
-const CORAL = "199, 67, 15";
+// Cores da marca (grafite + cobre) em RGB, para SVG e filtros.
+const NAVY = "56, 54, 53";
+const CORAL = "169, 116, 100";
 
 // Larguras de controlo (0–1) da base ao topo — perfil de vaso com bojo e gargalo.
 const CONTROL = [

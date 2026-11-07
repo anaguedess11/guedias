@@ -5,13 +5,25 @@ import { useRouter } from "next/navigation";
 import { Filament, FilamentWriteInput } from "@/lib/types";
 import { createFilament, updateFilament } from "@/app/admin/filamentos/actions";
 
-const MATERIAL_OPTIONS = ["PLA", "PETG", "ABS", "TPU", "ASA", "PC", "Nylon", "Resina"];
+const MATERIAL_OPTIONS = [
+  "Soleyin PLA",
+  "Hyper PLA",
+  "PLA",
+  "PETG",
+  "ABS",
+  "TPU",
+  "ASA",
+  "PC",
+  "Nylon",
+  "Resina",
+];
 
 function toFormState(filament?: Filament) {
   return {
     name: filament?.name ?? "",
     brand: filament?.brand ?? "",
     color: filament?.color ?? "",
+    hex: filament?.hex ?? "#A97464",
     material: filament?.material ?? MATERIAL_OPTIONS[0],
     pricePerKg: filament ? String(filament.pricePerKg) : "",
     notes: filament?.notes ?? "",
@@ -43,6 +55,7 @@ export function FilamentForm({ filament }: { filament?: Filament }) {
       name: form.name.trim(),
       brand: form.brand.trim() || null,
       color: form.color.trim(),
+      hex: form.hex,
       material: form.material.trim(),
       price_per_kg_cents: Math.round(priceEuros * 100),
       notes: form.notes.trim() || null,
@@ -82,13 +95,22 @@ export function FilamentForm({ filament }: { filament?: Filament }) {
           </div>
           <div>
             <label className="label">Cor</label>
-            <input
-              className="input"
-              required
-              placeholder="Branco"
-              value={form.color}
-              onChange={(e) => set("color", e.target.value)}
-            />
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                aria-label="Escolher a cor do filamento"
+                className="h-11 w-12 shrink-0 cursor-pointer rounded-lg border border-black/10"
+                value={form.hex}
+                onChange={(e) => set("hex", e.target.value)}
+              />
+              <input
+                className="input"
+                required
+                placeholder="Branco"
+                value={form.color}
+                onChange={(e) => set("color", e.target.value)}
+              />
+            </div>
           </div>
           <div>
             <label className="label">Tipo de material</label>

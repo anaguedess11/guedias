@@ -4,14 +4,17 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "@/components/CartProvider";
-import { PrintedObject } from "@/components/PrintedObject";
+import { ProductVisual } from "@/components/ProductVisual";
 import { createClient } from "@/lib/supabase/client";
 import { formatPrice } from "@/lib/format";
-import type { PaymentMethod } from "@/lib/payment-details";
-
-const FREE_SHIPPING_THRESHOLD = 35;
-
-type ShippingMethod = "standard" | "expresso";
+import { isBankTransferAvailable, type PaymentMethod } from "@/lib/payment-details";
+import {
+  EXPRESS_SHIPPING_CENTS,
+  STANDARD_SHIPPING_CENTS,
+  isPickup,
+  shippingCostCents,
+  type ShippingMethod,
+} from "@/lib/shipping";
 
 interface ShippingForm {
   name: string;
@@ -64,10 +67,13 @@ export default function CheckoutPage() {
     });
   }, []);
 
-  const shippingCost = useMemo(() => {
-    if (shippingMethod === "expresso") return 7.9;
-    return subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 3.9;
-  }, [shippingMethod, subtotal]);
+  const subtotalCents = Math.round(subtotal * 100);
+  const shippingCost = useMemo(
+    () => shippingCostCents(shippingMethod, subtotalCents) / 100,
+    [shippingMethod, subtotalCents]
+  );
+  const standardCost = shippingCostCents("standard", subtotalCents);
+  const pickup = isPickup(shippingMethod);
 
   const total = subtotal + shippingCost;
 
@@ -141,8 +147,8 @@ export default function CheckoutPage() {
         Rever e confirmar
       </h1>
       <p className="mt-2 max-w-lg text-sm text-stone-900/55">
-        Paga por MB WAY ou transferência bancária — sem cartão, sem plataformas de terceiros.
-        Confirmamos assim que recebermos o pagamento.
+        Paga por {isBankTransferAvailable ? "MB WAY ou transferência bancária" : "MB WAY"}. A
+        encomenda avança assim que confirmarmos o pagamento.
       </p>
 
       <div className="mt-10 grid gap-10 lg:grid-cols-3 lg:gap-12">
@@ -150,9 +156,10 @@ export default function CheckoutPage() {
           <div className="space-y-4">
             {items.map((item) => (
               <div key={item.key} className="card flex gap-4 p-4">
-                <PrintedObject
+                <ProductVisual
+                  imageUrl={item.imageUrl}
                   profile={item.profile}
-                  color="#A97464"
+                  color={item.colorHex ?? "#A97464"}
                   className="h-20 w-20 shrink-0 rounded-xl"
                 />
                 <div className="flex flex-1 flex-col justify-center">
@@ -189,7 +196,43 @@ export default function CheckoutPage() {
           </div>
 
           <div className="card space-y-3 p-6">
-            <h2 className="text-sm font-semibold text-stone-900">Morada de envio</h2>
+            <h2 className="text-sm font-semibold text-stone-900">Método de entrega</h2>
+            <RadioCard
+              selected={shippingMethod === "standard"}
+              onSelect={() => setShippingMethod("standard")}
+              title="Envio normal (3-5 dias úteis)"
+              description={standardCost === 0 ? "Grátis para esta encomenda" : formatPrice(STANDARD_SHIPPING_CENTS / 100)}
+            />
+            <RadioCard
+              selected={shippingMethod === "expresso"}
+              onSelect={() => setShippingMethod("expresso")}
+              title="Envio expresso (1-2 dias úteis)"
+              description={formatPrice(EXPRESS_SHIPPING_CENTS / 100)}
+            />
+            <RadioCard
+              selected={shippingMethod === "maos_coimbra"}
+              onSelect={() => setShippingMethod("maos_coimbra")}
+              title="Entrega em mão em Coimbra"
+              description="Grátis"
+            />
+            <RadioCard
+              selected={shippingMethod === "maos_santarem"}
+              onSelect={() => setShippingMethod("maos_santarem")}
+              title="Entrega em mão em Santarém"
+              description="Grátis"
+            />
+            {pickup && (
+              <p className="rounded-xl bg-clay-50 px-4 py-3 text-xs leading-relaxed text-clay-800">
+                O pagamento é feito antes da entrega, como nos outros métodos. Depois de o
+                confirmarmos, contactamos-te para combinar o local e a hora.
+              </p>
+            )}
+          </div>
+
+          <div className="card space-y-3 p-6">
+            <h2 className="text-sm font-semibold text-stone-900">
+              {pickup ? "Os teus dados" : "Morada de envio"}
+            </h2>
             <div>
               <label className="label">Nome</label>
               <input
@@ -201,72 +244,68 @@ export default function CheckoutPage() {
               />
             </div>
             <div>
-              <label className="label">Telemóvel {paymentMethod === "mbway" && "(para o MB WAY)"}</label>
+              <label className="label">
+                Telemóvel{" "}
+                {pickup
+                  ? "(para combinarmos a entrega)"
+                  : paymentMethod === "mbway"
+                  ? "(para o MB WAY)"
+                  : ""}
+              </label>
               <input
-                required={paymentMethod === "mbway"}
+                required={pickup || paymentMethod === "mbway"}
+                type="tel"
                 className="input"
                 placeholder="9xx xxx xxx"
                 value={shipping.phone}
                 onChange={(e) => updateShipping("phone", e.target.value)}
               />
             </div>
-            <div>
-              <label className="label">Morada</label>
-              <input
-                required
-                className="input"
-                placeholder="Rua, número"
-                value={shipping.line1}
-                onChange={(e) => updateShipping("line1", e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="label">Morada (linha 2, opcional)</label>
-              <input
-                className="input"
-                placeholder="Andar, apartamento…"
-                value={shipping.line2}
-                onChange={(e) => updateShipping("line2", e.target.value)}
-              />
-            </div>
-            <div className="flex gap-3">
-              <div className="flex-1">
-                <label className="label">Código postal</label>
-                <input
-                  required
-                  className="input"
-                  placeholder="0000-000"
-                  value={shipping.postalCode}
-                  onChange={(e) => updateShipping("postalCode", e.target.value)}
-                />
-              </div>
-              <div className="flex-[2]">
-                <label className="label">Localidade</label>
-                <input
-                  required
-                  className="input"
-                  placeholder="Cidade"
-                  value={shipping.city}
-                  onChange={(e) => updateShipping("city", e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="card space-y-3 p-6">
-            <h2 className="text-sm font-semibold text-stone-900">Método de envio</h2>
-            <RadioCard
-              selected={shippingMethod === "standard"}
-              onSelect={() => setShippingMethod("standard")}
-              title="Envio normal (3-5 dias úteis)"
-              description={subtotal >= FREE_SHIPPING_THRESHOLD ? "Grátis para esta encomenda" : formatPrice(3.9)}
-            />
-            <RadioCard
-              selected={shippingMethod === "expresso"}
-              onSelect={() => setShippingMethod("expresso")}
-              title="Envio expresso (1-2 dias úteis)"
-              description={formatPrice(7.9)}
-            />
+            {!pickup && (
+              <>
+                <div>
+                  <label className="label">Morada</label>
+                  <input
+                    required
+                    className="input"
+                    placeholder="Rua, número"
+                    value={shipping.line1}
+                    onChange={(e) => updateShipping("line1", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="label">Morada (linha 2, opcional)</label>
+                  <input
+                    className="input"
+                    placeholder="Andar, apartamento…"
+                    value={shipping.line2}
+                    onChange={(e) => updateShipping("line2", e.target.value)}
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <div className="flex-1">
+                    <label className="label">Código postal</label>
+                    <input
+                      required
+                      className="input"
+                      placeholder="0000-000"
+                      value={shipping.postalCode}
+                      onChange={(e) => updateShipping("postalCode", e.target.value)}
+                    />
+                  </div>
+                  <div className="flex-[2]">
+                    <label className="label">Localidade</label>
+                    <input
+                      required
+                      className="input"
+                      placeholder="Cidade"
+                      value={shipping.city}
+                      onChange={(e) => updateShipping("city", e.target.value)}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           <div className="card space-y-3 p-6">
@@ -277,12 +316,14 @@ export default function CheckoutPage() {
               title="MB WAY"
               description="Enviamos-te o nosso número — pagas tu, pela tua app MB WAY."
             />
-            <RadioCard
-              selected={paymentMethod === "transferencia"}
-              onSelect={() => setPaymentMethod("transferencia")}
-              title="Transferência bancária"
-              description="Enviamos-te o IBAN e a referência a usar na transferência."
-            />
+            {isBankTransferAvailable && (
+              <RadioCard
+                selected={paymentMethod === "transferencia"}
+                onSelect={() => setPaymentMethod("transferencia")}
+                title="Transferência bancária"
+                description="Enviamos-te o IBAN e a referência a usar na transferência."
+              />
+            )}
             <p className="pt-1 text-xs text-stone-900/45">
               A encomenda fica reservada assim que confirmamos a receção do pagamento.
             </p>
@@ -313,7 +354,7 @@ export default function CheckoutPage() {
                 <span>{formatPrice(subtotal)}</span>
               </div>
               <div className="flex justify-between text-stone-900/65">
-                <span>Envio</span>
+                <span>{pickup ? "Entrega em mão" : "Envio"}</span>
                 <span>{shippingCost === 0 ? "Grátis" : formatPrice(shippingCost)}</span>
               </div>
             </div>

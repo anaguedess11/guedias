@@ -10,7 +10,6 @@ export function AddToCartForm({ product }: { product: Product }) {
   const router = useRouter();
 
   const [color, setColor] = useState(product.colors[0]?.name ?? "");
-  const [material, setMaterial] = useState(product.materials[0] ?? "");
   const [personalization, setPersonalization] = useState("");
   const [qty, setQty] = useState(1);
   const [feedback, setFeedback] = useState<"idle" | "added">("idle");
@@ -21,25 +20,30 @@ export function AddToCartForm({ product }: { product: Product }) {
     return true;
   }, [product.customizable, personalization]);
 
-  function handleAdd() {
+  function handleAdd(): boolean {
     if (!canSubmit) {
       setError("Preenche a personalização antes de adicionar ao carrinho.");
-      return;
+      return false;
     }
     setError(null);
+    const selectedColor = product.colors.find((c) => c.name === color);
     addItem({
       productId: product.id,
       slug: product.slug,
       name: product.name,
       price: product.price,
       color,
-      material,
+      // O cliente só escolhe a cor: o material vem do filamento dessa cor.
+      material: selectedColor?.material ?? product.materials[0] ?? "",
       personalization: product.customizable ? personalization.trim() : undefined,
       profile: product.profile,
+      imageUrl: product.imageUrl,
+      colorHex: selectedColor?.hex,
       qty,
     });
     setFeedback("added");
     setTimeout(() => setFeedback("idle"), 2500);
+    return true;
   }
 
   return (
@@ -67,29 +71,6 @@ export function AddToCartForm({ product }: { product: Product }) {
           ))}
         </div>
       </div>
-
-      {/* Material */}
-      {product.materials.length > 1 && (
-        <div>
-          <span className="label">Material</span>
-          <div className="flex flex-wrap gap-2">
-            {product.materials.map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => setMaterial(m)}
-                className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
-                  material === m
-                    ? "border-clay-500 bg-clay-500 text-white"
-                    : "border-black/10 bg-white text-stone-900/70 hover:border-clay-500/40"
-                }`}
-              >
-                {m}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Personalização */}
       {product.customizable && (
@@ -144,8 +125,7 @@ export function AddToCartForm({ product }: { product: Product }) {
         <button
           type="button"
           onClick={() => {
-            handleAdd();
-            router.push("/carrinho");
+            if (handleAdd()) router.push("/carrinho");
           }}
           className="btn-secondary w-full sm:w-auto"
         >

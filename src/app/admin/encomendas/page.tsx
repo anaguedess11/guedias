@@ -7,7 +7,7 @@ import { AdminFilters } from "@/components/AdminFilters";
 import { PAYMENT_METHOD_LABEL, isPaymentMethod } from "@/lib/payment-details";
 
 export const metadata: Metadata = {
-  title: "Encomendas — Guedias",
+  title: "Encomendas — Gu3Dias",
 };
 
 interface OrderItemRow {

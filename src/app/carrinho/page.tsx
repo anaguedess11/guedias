@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { useCart } from "@/components/CartProvider";
-import { PrintedObject } from "@/components/PrintedObject";
+import { ProductVisual } from "@/components/ProductVisual";
 import { formatPrice } from "@/lib/format";
+import { FREE_SHIPPING_THRESHOLD_CENTS } from "@/lib/shipping";
 
-const FREE_SHIPPING_THRESHOLD = 35;
-const SHIPPING_COST = 3.9;
+const FREE_SHIPPING_THRESHOLD = FREE_SHIPPING_THRESHOLD_CENTS / 100;
 
 export default function CarrinhoPage() {
   const { items, removeItem, updateQty, subtotal, isHydrated } = useCart();
@@ -30,9 +30,6 @@ export default function CarrinhoPage() {
     );
   }
 
-  const shipping = subtotal >= FREE_SHIPPING_THRESHOLD || subtotal === 0 ? 0 : SHIPPING_COST;
-  const total = subtotal + shipping;
-
   return (
     <div className="container-page py-10 sm:py-14">
       <p className="eyebrow">Carrinho</p>
@@ -48,9 +45,10 @@ export default function CarrinhoPage() {
               className="card flex gap-4 p-4 sm:p-5"
             >
               <Link href={`/produto/${item.slug}`} className="shrink-0">
-                <PrintedObject
+                <ProductVisual
+                  imageUrl={item.imageUrl}
                   profile={item.profile}
-                  color={colorHexFromName(item.color) ?? "#A97464"}
+                  color={item.colorHex ?? "#A97464"}
                   className="h-24 w-24 rounded-xl sm:h-28 sm:w-28"
                 />
               </Link>
@@ -119,17 +117,14 @@ export default function CarrinhoPage() {
               </div>
               <div className="flex justify-between text-stone-900/65">
                 <span>Envio</span>
-                <span>{shipping === 0 ? "Grátis" : formatPrice(shipping)}</span>
+                <span>Calculado no checkout</span>
               </div>
-              {shipping > 0 && (
-                <p className="text-xs text-clay-600">
-                  Faltam {formatPrice(FREE_SHIPPING_THRESHOLD - subtotal)} para envio grátis.
-                </p>
-              )}
-            </div>
-            <div className="mt-4 flex justify-between border-t border-black/5 pt-4 font-display text-base font-semibold text-stone-900">
-              <span>Total</span>
-              <span>{formatPrice(total)}</span>
+              <p className="text-xs text-clay-600">
+                {subtotal >= FREE_SHIPPING_THRESHOLD
+                  ? "Envio normal grátis nesta encomenda."
+                  : `Faltam ${formatPrice(FREE_SHIPPING_THRESHOLD - subtotal)} para envio normal grátis.`}{" "}
+                Entrega em mão grátis em Coimbra ou Santarém.
+              </p>
             </div>
             <Link href="/checkout" className="btn-primary mt-6 w-full">
               Finalizar compra
@@ -142,22 +137,6 @@ export default function CarrinhoPage() {
       </div>
     </div>
   );
-}
-
-function colorHexFromName(name: string): string | undefined {
-  const map: Record<string, string> = {
-    Branco: "#F4F1EA",
-    Preto: "#232320",
-    "Cinza Grafite": "#54534D",
-    "Verde-sálvia": "#8A9A78",
-    Terracota: "#C0663E",
-    "Azul-petróleo": "#2C5F63",
-    "Amarelo-mostarda": "#D9A441",
-    "Rosa-pastel": "#E8B4BC",
-    Natural: "#E3DCCB",
-    Madeira: "#9C7A54",
-  };
-  return map[name];
 }
 
 function CartEmptyIcon() {

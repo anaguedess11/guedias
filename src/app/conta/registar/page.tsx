@@ -67,7 +67,7 @@ export default function RegistarPage() {
   return (
     <div className="container-page flex justify-center py-16 sm:py-24">
       <div className="w-full max-w-sm">
-        <p className="eyebrow text-center">Junta-te à Guedias</p>
+        <p className="eyebrow text-center">Junta-te à Gu3Dias</p>
         <h1 className="mt-2 text-center font-display text-2xl font-semibold text-stone-900 sm:text-3xl">
           Criar conta
         </h1>

@@ -8,13 +8,14 @@ interface FilamentRow {
   name: string;
   brand: string | null;
   color: string;
+  hex: string | null;
   material: string;
   price_per_kg_cents: number;
   notes: string | null;
   created_at: string;
 }
 
-const SELECT_COLUMNS = "id, name, brand, color, material, price_per_kg_cents, notes, created_at";
+const SELECT_COLUMNS = "id, name, brand, color, hex, material, price_per_kg_cents, notes, created_at";
 
 function mapRow(row: FilamentRow): Filament {
   return {
@@ -22,6 +23,7 @@ function mapRow(row: FilamentRow): Filament {
     name: row.name,
     brand: row.brand,
     color: row.color,
+    hex: row.hex ?? "#A97464",
     material: row.material,
     pricePerKg: row.price_per_kg_cents / 100,
     notes: row.notes,

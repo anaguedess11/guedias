@@ -3,15 +3,17 @@ import type { Metadata } from "next";
 import { getProductById } from "@/lib/data/products";
 import { ProductForm } from "@/components/ProductForm";
 import { getAllSavedCalculations } from "@/lib/data/savedCalculations";
+import { getAllFilaments } from "@/lib/data/filaments";
 
 export const metadata: Metadata = {
-  title: "Editar produto — Guedias",
+  title: "Editar produto — Gu3Dias",
 };
 
 export default async function EditarProdutoPage({ params }: { params: { id: string } }) {
-  const [product, savedCalculations] = await Promise.all([
+  const [product, savedCalculations, filaments] = await Promise.all([
     getProductById(params.id),
     getAllSavedCalculations(),
+    getAllFilaments(),
   ]);
   if (!product) notFound();
 
@@ -22,7 +24,7 @@ export default async function EditarProdutoPage({ params }: { params: { id: stri
         Editar {product.name}
       </h1>
       <div className="mt-8 max-w-3xl">
-        <ProductForm product={product} savedCalculations={savedCalculations} />
+        <ProductForm product={product} savedCalculations={savedCalculations} filaments={filaments} />
       </div>
     </div>
   );

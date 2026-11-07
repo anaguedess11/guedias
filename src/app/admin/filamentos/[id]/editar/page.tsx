@@ -4,7 +4,7 @@ import { getFilamentById } from "@/lib/data/filaments";
 import { FilamentForm } from "@/components/FilamentForm";
 
 export const metadata: Metadata = {
-  title: "Editar filamento — Guedias",
+  title: "Editar filamento — Gu3Dias",
 };
 
 export default async function EditarFilamentoPage({ params }: { params: { id: string } }) {

@@ -7,7 +7,7 @@ import { getProductsByIds } from "@/lib/data/products";
 import { ProductCard } from "@/components/ProductCard";
 
 export const metadata: Metadata = {
-  title: "Os meus favoritos — Guedias",
+  title: "Os meus favoritos — Gu3Dias",
 };
 
 export default async function FavoritosPage() {

@@ -23,16 +23,16 @@ export function Header({
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-black/5 bg-white">
+    <header className="sticky top-0 z-40 bg-white">
       <div className="container-page flex h-16 items-center justify-between sm:h-20">
         <Link href="/" className="flex items-center" onClick={() => setOpen(false)}>
           <Image
             src="/logo-wordmark.png"
-            alt="Guedias"
-            width={821}
-            height={184}
+            alt="Gu3Dias"
+            width={545}
+            height={100}
             priority
-            className="h-8 w-auto sm:h-9"
+            className="h-6 w-auto sm:h-7"
           />
         </Link>
 
@@ -90,6 +90,7 @@ export function Header({
           </button>
         </div>
       </div>
+      <div className="copper-bar" />
 
       {open && (
         <div className="border-t border-black/5 bg-white md:hidden">

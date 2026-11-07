@@ -5,7 +5,7 @@ import { getCalculatorSettings } from "@/lib/data/calculatorSettings";
 import { getAllSavedCalculations } from "@/lib/data/savedCalculations";
 
 export const metadata: Metadata = {
-  title: "Calculadora de preço — Guedias",
+  title: "Calculadora de preço — Gu3Dias",
 };
 
 export default async function CalculadoraPage() {

@@ -11,6 +11,8 @@ interface ActionResult {
   id?: string;
 }
 
+const MAX_PRODUCT_IMAGES = 10;
+
 function validate(input: ProductWriteInput): string | null {
   if (!input.name.trim()) return "O nome é obrigatório.";
   if (!input.slug.trim() || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(input.slug)) {
@@ -20,7 +22,10 @@ function validate(input: ProductWriteInput): string | null {
   if (!Number.isFinite(input.price_cents) || input.price_cents <= 0) {
     return "O preço tem de ser maior que zero.";
   }
-  if (input.colors.length === 0) return "Adiciona pelo menos uma cor.";
+  if (input.colors.length === 0) return "Escolhe pelo menos um filamento ou cor.";
+  if (input.image_urls.length > MAX_PRODUCT_IMAGES) {
+    return `Cada produto pode ter no máximo ${MAX_PRODUCT_IMAGES} fotos.`;
+  }
   if (input.materials.length === 0) return "Adiciona pelo menos um material.";
   if (input.profile.length < 2) return "A silhueta precisa de pelo menos 2 valores.";
   if (input.profile.some((n) => !Number.isFinite(n) || n <= 0 || n > 1)) {

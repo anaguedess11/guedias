@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { categories } from "@/data/categories";
-import { Product, ProductColor, ProductWriteInput, SavedCalculation } from "@/lib/types";
+import { Filament, Product, ProductColor, ProductWriteInput, SavedCalculation } from "@/lib/types";
 import { createProduct, updateProduct } from "@/app/admin/actions";
-import { ImageUploadField } from "@/components/ImageUploadField";
+import { ImageGalleryField } from "@/components/ImageUploadField";
 import { formatPrice } from "@/lib/format";
 
 const PROFILE_PRESETS: { label: string; profile: number[] }[] = [
@@ -34,8 +34,11 @@ function toFormState(product?: Product) {
     shortDescription: product?.shortDescription ?? "",
     description: product?.description ?? "",
     details: product?.details?.join("\n") ?? "",
-    materials: product?.materials?.join(", ") ?? "",
-    imageUrl: product?.imageUrl ?? "",
+    // Os materiais dos filamentos escolhidos são acrescentados ao guardar.
+    materials:
+      product?.materials
+        ?.filter((m) => !product.colors.some((c) => c.material === m))
+        .join(", ") ?? "",
     customizable: product?.customizable ?? false,
     customizationLabel: product?.customizationLabel ?? "",
     customizationNote: product?.customizationNote ?? "",
@@ -50,18 +53,32 @@ function toFormState(product?: Product) {
 export function ProductForm({
   product,
   savedCalculations = [],
+  filaments = [],
 }: {
   product?: Product;
   savedCalculations?: SavedCalculation[];
+  filaments?: Filament[];
 }) {
   const router = useRouter();
   const isEdit = Boolean(product);
   const [form, setForm] = useState(toFormState(product));
-  const [colors, setColors] = useState<ProductColor[]>(
-    product?.colors && product.colors.length > 0
-      ? product.colors
-      : [{ name: "Preto", hex: "#232320" }]
-  );
+  const [images, setImages] = useState<string[]>(product?.images ?? []);
+  const [colors, setColors] = useState<ProductColor[]>(product?.colors ?? []);
+
+  // Podem existir várias bobines iguais: mostra-se cada cor + material uma só vez.
+  const filamentOptions = useMemo(() => {
+    const seen = new Map<string, Filament>();
+    for (const f of filaments) {
+      const key = `${f.color}::${f.material}`;
+      if (!seen.has(key)) seen.set(key, f);
+    }
+    return Array.from(seen.values()).sort((a, b) => a.color.localeCompare(b.color, "pt"));
+  }, [filaments]);
+
+  const manualColors = colors
+    .map((color, index) => ({ color, index }))
+    .filter(({ color }) => !color.material);
+
   const [slugTouched, setSlugTouched] = useState(isEdit);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -87,6 +104,19 @@ export function ProductForm({
     setColors((cs) => cs.filter((_, i) => i !== index));
   }
 
+  function isFilamentSelected(f: Filament) {
+    return colors.some((c) => c.name === f.color && c.material === f.material);
+  }
+
+  function toggleFilament(f: Filament) {
+    setColors((cs) =>
+      isFilamentSelected(f)
+        ? cs.filter((c) => !(c.name === f.color && c.material === f.material))
+        : // O cliente escolhe pelo nome da cor, por isso cada nome só pode existir uma vez.
+          [...cs.filter((c) => c.name !== f.color), { name: f.color, hex: f.hex, material: f.material }]
+    );
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -106,8 +136,22 @@ export function ProductForm({
       .filter((n) => Number.isFinite(n));
 
     const cleanColors = colors
-      .map((c) => ({ name: c.name.trim(), hex: c.hex.trim() }))
+      .map((c) => ({
+        name: c.name.trim(),
+        hex: c.hex.trim(),
+        ...(c.material ? { material: c.material } : {}),
+      }))
       .filter((c) => c.name && c.hex);
+
+    const typedMaterials = form.materials.split(",").map((m) => m.trim()).filter(Boolean);
+    const filamentMaterials = cleanColors.flatMap((c) => (c.material ? [c.material] : []));
+    const hasManualColor = cleanColors.some((c) => !c.material);
+    const materials = Array.from(new Set([...typedMaterials, ...filamentMaterials]));
+
+    if (hasManualColor && typedMaterials.length === 0) {
+      setError("Indica o material das cores adicionadas à mão.");
+      return;
+    }
 
     const input: ProductWriteInput = {
       slug: form.slug.trim(),
@@ -119,9 +163,10 @@ export function ProductForm({
       short_description: form.shortDescription.trim(),
       description: form.description.trim(),
       details: form.details.split("\n").map((d) => d.trim()).filter(Boolean),
-      materials: form.materials.split(",").map((m) => m.trim()).filter(Boolean),
+      materials,
       colors: cleanColors,
-      image_url: form.imageUrl.trim() || null,
+      image_url: images[0] ?? null,
+      image_urls: images,
       customizable: form.customizable,
       customization_label: form.customizable ? form.customizationLabel.trim() || null : null,
       customization_note: form.customizable ? form.customizationNote.trim() || null : null,
@@ -258,22 +303,51 @@ export function ProductForm({
       </div>
 
       <div className="card space-y-4 p-6">
-        <h2 className="text-sm font-semibold text-stone-900">Variantes</h2>
-        <div>
-          <label className="label">Materiais (separados por vírgula)</label>
-          <input
-            className="input"
-            required
-            placeholder="PLA, PETG"
-            value={form.materials}
-            onChange={(e) => set("materials", e.target.value)}
-          />
-        </div>
+        <h2 className="text-sm font-semibold text-stone-900">Cores e fotografias</h2>
+
+        {filamentOptions.length > 0 && (
+          <div>
+            <span className="label">Filamentos disponíveis para este produto</span>
+            <p className="mb-2 text-xs text-stone-900/45">
+              Marca os que podem ser usados. O cliente só vê as cores.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {filamentOptions.map((f) => {
+                const selected = isFilamentSelected(f);
+                return (
+                  <button
+                    key={f.id}
+                    type="button"
+                    role="checkbox"
+                    aria-checked={selected}
+                    onClick={() => toggleFilament(f)}
+                    className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-xs transition-colors ${
+                      selected
+                        ? "border-clay-500 bg-clay-50 text-stone-900"
+                        : "border-black/10 bg-white text-stone-900/70 hover:border-clay-500/40"
+                    }`}
+                  >
+                    <span
+                      className="h-4 w-4 shrink-0 rounded-full"
+                      style={{ backgroundColor: f.hex, boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.15)" }}
+                    />
+                    <span>
+                      <span className="block font-medium">{f.color}</span>
+                      <span className="block text-stone-900/50">{f.material}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div>
-          <span className="label">Cores</span>
+          <span className="label">
+            {filamentOptions.length > 0 ? "Outras cores (opcional)" : "Cores"}
+          </span>
           <div className="space-y-2">
-            {colors.map((c, i) => (
+            {manualColors.map(({ color: c, index: i }) => (
               <div key={i} className="flex items-center gap-2">
                 <input
                   type="color"
@@ -290,8 +364,7 @@ export function ProductForm({
                 <button
                   type="button"
                   onClick={() => removeColor(i)}
-                  disabled={colors.length === 1}
-                  className="shrink-0 text-xs font-medium text-stone-900/45 hover:text-red-600 disabled:opacity-30"
+                  className="shrink-0 text-xs font-medium text-stone-900/45 hover:text-red-600"
                 >
                   Remover
                 </button>
@@ -299,15 +372,23 @@ export function ProductForm({
             ))}
           </div>
           <button type="button" onClick={addColor} className="btn-secondary mt-3">
-            + Adicionar cor
+            + Adicionar cor à mão
           </button>
         </div>
 
-        <ImageUploadField
-          value={form.imageUrl}
-          onChange={(url) => set("imageUrl", url)}
-          slug={form.slug || form.name}
-        />
+        {manualColors.length > 0 && (
+          <div>
+            <label className="label">Material das cores à mão (separados por vírgula)</label>
+            <input
+              className="input"
+              placeholder="PLA"
+              value={form.materials}
+              onChange={(e) => set("materials", e.target.value)}
+            />
+          </div>
+        )}
+
+        <ImageGalleryField value={images} onChange={setImages} slug={form.slug || form.name} />
       </div>
 
       <div className="card space-y-4 p-6">

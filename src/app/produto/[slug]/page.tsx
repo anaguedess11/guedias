@@ -4,8 +4,7 @@ import type { Metadata } from "next";
 import { getProductBySlug, getRelatedProducts } from "@/lib/data/products";
 import { getCategory } from "@/data/categories";
 import { formatPrice } from "@/lib/format";
-import { PrintedObject } from "@/components/PrintedObject";
-import { ProductVisual } from "@/components/ProductVisual";
+import { ProductGallery } from "@/components/ProductGallery";
 import { AddToCartForm } from "@/components/AddToCartForm";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { ProductCard } from "@/components/ProductCard";
@@ -20,9 +19,9 @@ export async function generateMetadata({
   params: { slug: string };
 }): Promise<Metadata> {
   const product = await getProductBySlug(params.slug);
-  if (!product) return { title: "Produto não encontrado — Guedias" };
+  if (!product) return { title: "Produto não encontrado — Gu3Dias" };
   return {
-    title: `${product.name} — Guedias`,
+    title: `${product.name} — Gu3Dias`,
     description: product.shortDescription,
   };
 }
@@ -50,25 +49,12 @@ export default async function ProductPage({ params }: { params: { slug: string }
 
       <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
         {/* Galeria */}
-        <div>
-          <ProductVisual
-            imageUrl={product.imageUrl}
-            profile={product.profile}
-            color={product.colors[0]?.hex ?? "#A97464"}
-            className="aspect-square w-full rounded-xl2 shadow-card"
-          />
-          <div className="mt-4 grid grid-cols-4 gap-3">
-            {product.colors.map((c) => (
-              <PrintedObject
-                key={c.hex}
-                profile={product.profile}
-                color={c.hex}
-                className="aspect-square rounded-xl"
-                showLines={false}
-              />
-            ))}
-          </div>
-        </div>
+        <ProductGallery
+          images={product.images}
+          name={product.name}
+          profile={product.profile}
+          color={product.colors[0]?.hex ?? "#A97464"}
+        />
 
         {/* Info */}
         <div>
@@ -85,7 +71,8 @@ export default async function ProductPage({ params }: { params: { slug: string }
               {formatPrice(product.price)}
             </span>
             <span className="text-xs text-stone-900/45">
-              Tempo médio de impressão: {product.printTimeHours}h · {product.dimensions}
+              Tempo médio de impressão: {product.printTimeHours}h
+              {product.dimensions ? ` · ${product.dimensions}` : ""}
             </span>
           </div>
 
@@ -103,17 +90,19 @@ export default async function ProductPage({ params }: { params: { slug: string }
                 {product.description}
               </p>
             </div>
-            <div>
-              <h2 className="text-sm font-semibold text-stone-900">Detalhes de impressão</h2>
-              <ul className="mt-2 space-y-1.5">
-                {product.details.map((d) => (
-                  <li key={d} className="flex gap-2 text-sm leading-relaxed text-stone-900/65">
-                    <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-clay-500" />
-                    {d}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {product.details.length > 0 && (
+              <div>
+                <h2 className="text-sm font-semibold text-stone-900">Detalhes de impressão</h2>
+                <ul className="mt-2 space-y-1.5">
+                  {product.details.map((d) => (
+                    <li key={d} className="flex gap-2 text-sm leading-relaxed text-stone-900/65">
+                      <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-clay-500" />
+                      {d}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </div>
       </div>

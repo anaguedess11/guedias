@@ -7,7 +7,7 @@ import { DeleteFilamentButton } from "@/components/DeleteFilamentButton";
 import { CalculatorSettingsForm } from "@/components/CalculatorSettingsForm";
 
 export const metadata: Metadata = {
-  title: "Filamentos — Guedias",
+  title: "Filamentos — Gu3Dias",
 };
 
 export default async function AdminFilamentsPage() {

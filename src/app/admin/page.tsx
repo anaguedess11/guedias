@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { formatPrice } from "@/lib/format";
 
 export const metadata: Metadata = {
-  title: "Painel — Guedias",
+  title: "Painel — Gu3Dias",
 };
 
 interface OrderRow {

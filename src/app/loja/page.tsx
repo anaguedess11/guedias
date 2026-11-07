@@ -4,8 +4,8 @@ import { LojaClient } from "@/components/LojaClient";
 import { getAllProducts } from "@/lib/data/products";
 
 export const metadata: Metadata = {
-  title: "Loja — Guedias",
-  description: "Explora todos os produtos impressos em 3D da Guedias, por categoria.",
+  title: "Loja — Gu3Dias",
+  description: "Explora todos os produtos impressos em 3D da Gu3Dias, por categoria.",
 };
 
 export default async function LojaPage() {

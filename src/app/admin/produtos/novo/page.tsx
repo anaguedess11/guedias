@@ -1,13 +1,17 @@
 import type { Metadata } from "next";
 import { ProductForm } from "@/components/ProductForm";
 import { getAllSavedCalculations } from "@/lib/data/savedCalculations";
+import { getAllFilaments } from "@/lib/data/filaments";
 
 export const metadata: Metadata = {
-  title: "Novo produto — Guedias",
+  title: "Novo produto — Gu3Dias",
 };
 
 export default async function NovoProdutoPage() {
-  const savedCalculations = await getAllSavedCalculations();
+  const [savedCalculations, filaments] = await Promise.all([
+    getAllSavedCalculations(),
+    getAllFilaments(),
+  ]);
 
   return (
     <div>
@@ -16,7 +20,7 @@ export default async function NovoProdutoPage() {
         Novo produto
       </h1>
       <div className="mt-8 max-w-3xl">
-        <ProductForm savedCalculations={savedCalculations} />
+        <ProductForm savedCalculations={savedCalculations} filaments={filaments} />
       </div>
     </div>
   );

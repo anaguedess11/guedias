@@ -14,8 +14,9 @@ interface ProductRow {
   description: string;
   details: string[] | null;
   materials: string[] | null;
-  colors: { name: string; hex: string }[] | null;
+  colors: { name: string; hex: string; material?: string }[] | null;
   image_url: string | null;
+  image_urls: string[] | null;
   customizable: boolean;
   customization_label: string | null;
   customization_note: string | null;
@@ -27,9 +28,16 @@ interface ProductRow {
 }
 
 const SELECT_COLUMNS =
-  "id, slug, name, category_key, price_cents, compare_at_price_cents, short_description, description, details, materials, colors, image_url, customizable, customization_label, customization_note, profile, print_time_hours, dimensions, featured, tags";
+  "id, slug, name, category_key, price_cents, compare_at_price_cents, short_description, description, details, materials, colors, image_url, image_urls, customizable, customization_label, customization_note, profile, print_time_hours, dimensions, featured, tags";
 
 function mapRow(row: ProductRow): Product {
+  const images =
+    row.image_urls && row.image_urls.length > 0
+      ? row.image_urls
+      : row.image_url
+      ? [row.image_url]
+      : [];
+
   return {
     id: row.id,
     slug: row.slug,
@@ -43,7 +51,8 @@ function mapRow(row: ProductRow): Product {
     details: row.details ?? [],
     materials: row.materials ?? [],
     colors: row.colors ?? [],
-    imageUrl: row.image_url ?? undefined,
+    imageUrl: images[0],
+    images,
     customizable: row.customizable,
     customizationLabel: row.customization_label ?? undefined,
     customizationNote: row.customization_note ?? undefined,

@@ -42,9 +42,17 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
 
     load();
 
-    const { data: sub } = supabase.auth.onAuthStateChange(() => load());
+    // O setTimeout é necessário: chamar métodos de auth diretamente neste callback
+    // bloqueia o cliente, e todas as chamadas seguintes (getUser, signOut) ficam
+    // pendentes para sempre.
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const { data: sub } = supabase.auth.onAuthStateChange(() => {
+      clearTimeout(timer);
+      timer = setTimeout(load, 0);
+    });
     return () => {
       active = false;
+      clearTimeout(timer);
       sub.subscription.unsubscribe();
     };
   }, []);

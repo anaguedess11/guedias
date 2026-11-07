@@ -33,7 +33,8 @@ create table if not exists products (
   details text[] not null default '{}',
   materials text[] not null default '{}',
   colors jsonb not null default '[]',            -- [{ "name": "Preto", "hex": "#232320" }, ...]
-  image_url text,                                 -- foto real opcional; sem isto usa-se o placeholder visual
+  image_url text,                                 -- foto de capa (igual a image_urls[1]); sem foto usa-se o placeholder visual
+  image_urls text[] not null default '{}',        -- todas as fotos do produto, por ordem
   customizable boolean not null default false,
   customization_label text,
   customization_note text,
@@ -80,6 +81,18 @@ create policy "utilizador vê o próprio perfil"
 create policy "utilizador atualiza o próprio perfil"
   on profiles for update
   using (auth.uid() = id);
+
+-- A policy limita a linha, não as colunas: is_admin nunca pode ser editável pelo cliente.
+revoke update on public.profiles from anon, authenticated;
+grant update (
+  full_name,
+  phone,
+  shipping_name,
+  shipping_line1,
+  shipping_line2,
+  shipping_postal_code,
+  shipping_city
+) on public.profiles to authenticated;
 
 -- Cria automaticamente uma linha em profiles sempre que um utilizador se regista
 create or replace function public.handle_new_user()
@@ -147,7 +160,8 @@ create table if not exists orders (
   email text not null,
   shipping_name text,
   shipping_address jsonb,
-  shipping_method text,
+  shipping_method text,                           -- standard, expresso, maos_coimbra ou maos_santarem
+  customer_phone text,
   subtotal_cents integer not null,
   shipping_cents integer not null,
   total_cents integer not null,
@@ -235,6 +249,7 @@ create table if not exists filaments (
   name text not null,
   brand text,
   color text not null,
+  hex text not null default '#A97464',
   material text not null,
   price_per_kg_cents integer not null check (price_per_kg_cents >= 0),
   notes text,

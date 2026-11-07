@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 /* ─────────────────────────────────────────────────────────────
-   Paleta Guedias — grafite + cobre, extraída diretamente do logótipo
+   Paleta Gu3Dias — grafite + cobre, extraída diretamente do logótipo
    (o texto "GUEDIAS" em cinza-grafite, a barra em gradiente cobre).
    Tudo em triplos RGB para o Tailwind (rgb(var(--x) / <alpha>)).
    Ajusta os tons aqui e o site inteiro acompanha.
@@ -33,7 +33,7 @@
   --c-coral-900: 52 33 27;
 
   /* Neutros quentes — fundo e texto (era cinza-azulado frio) */
-  --c-stone-25: 250 249 247;
+  --c-stone-25: 253 252 251;
   --c-stone-50: 245 243 240;
   --c-stone-100: 235 232 227;
   --c-stone-200: 219 214 207;
@@ -64,12 +64,12 @@ body {
   }
 
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-medium tracking-wide transition-all duration-200 ease-out;
+    @apply inline-flex items-center justify-center gap-2 rounded-md px-6 py-3 text-sm font-medium tracking-wide transition-all duration-200 ease-out disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   /* CTA principal — coral */
   .btn-primary {
-    @apply btn bg-clay-500 text-white shadow-soft hover:-translate-y-0.5 hover:bg-clay-600 hover:shadow-lift active:translate-y-0 active:scale-[0.97];
+    @apply btn bg-pine-800 text-white shadow-soft hover:-translate-y-0.5 hover:bg-clay-600 hover:shadow-lift active:translate-y-0 active:scale-[0.97];
   }
 
   .btn-secondary {
@@ -90,7 +90,13 @@ body {
   }
 
   .eyebrow {
-    @apply text-xs font-semibold uppercase tracking-[0.18em] text-clay-600;
+    @apply text-xs font-medium uppercase tracking-[0.24em] text-clay-600;
+  }
+
+  /* A barra em gradiente cobre do logótipo. */
+  .copper-bar {
+    height: 3px;
+    background: linear-gradient(90deg, #8f5f4c, #c58e78 30%, #f0c9b8 50%, #c58e78 70%, #8f5f4c);
   }
 
   .card {
@@ -107,6 +113,11 @@ body {
 }
 
 @layer utilities {
+  /* A Playfair usa algarismos antigos por omissão, pouco legíveis nos preços. */
+  .font-display {
+    font-variant-numeric: lining-nums;
+  }
+
   /* Reveal editorial nos cartões de produto (imagem faz zoom no hover). */
   .media-zoom {
     @apply transition-transform duration-[600ms] ease-out will-change-transform;

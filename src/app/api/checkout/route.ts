@@ -2,12 +2,14 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
-import { isPaymentMethod } from "@/lib/payment-details";
+import { isBankTransferAvailable, isPaymentMethod } from "@/lib/payment-details";
 import { sendOrderReceivedEmail } from "@/lib/email";
-
-const FREE_SHIPPING_THRESHOLD_CENTS = 3500;
-const STANDARD_SHIPPING_CENTS = 390;
-const EXPRESS_SHIPPING_CENTS = 790;
+import {
+  isPickup,
+  isShippingMethod,
+  shippingCostCents,
+  type ShippingMethod,
+} from "@/lib/shipping";
 
 interface CheckoutItemInput {
   productId: string;
@@ -36,7 +38,7 @@ export async function POST(request: Request) {
 
   let body: {
     items?: CheckoutItemInput[];
-    shippingMethod?: "standard" | "expresso";
+    shippingMethod?: string;
     paymentMethod?: string;
     email?: string;
     shipping?: Partial<ShippingInput>;
@@ -48,7 +50,10 @@ export async function POST(request: Request) {
   }
 
   const items = body.items ?? [];
-  const shippingMethod = body.shippingMethod === "expresso" ? "expresso" : "standard";
+  const shippingMethod: ShippingMethod = isShippingMethod(body.shippingMethod)
+    ? body.shippingMethod
+    : "standard";
+  const pickup = isPickup(shippingMethod);
 
   if (items.length === 0) {
     return NextResponse.json({ error: "O carrinho está vazio." }, { status: 400 });
@@ -61,6 +66,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Escolhe um método de pagamento válido." }, { status: 400 });
   }
   const paymentMethod = body.paymentMethod;
+  if (paymentMethod === "transferencia" && !isBankTransferAvailable) {
+    return NextResponse.json({ error: "A transferência bancária não está disponível." }, { status: 400 });
+  }
 
   const email = (body.email ?? "").trim();
   if (!email || !email.includes("@")) {
@@ -75,9 +83,15 @@ export async function POST(request: Request) {
   const city = (shipping.city ?? "").trim();
   const phone = (shipping.phone ?? "").trim();
 
-  if (!shippingName || !line1 || !postalCode || !city) {
+  if (!shippingName) {
+    return NextResponse.json({ error: "Indica o teu nome." }, { status: 400 });
+  }
+  if (!pickup && (!line1 || !postalCode || !city)) {
+    return NextResponse.json({ error: "Preenche a morada de envio completa." }, { status: 400 });
+  }
+  if (pickup && !phone) {
     return NextResponse.json(
-      { error: "Preenche o nome e a morada de envio completa." },
+      { error: "Indica o teu telemóvel para combinarmos a entrega em mão." },
       { status: 400 }
     );
   }
@@ -132,7 +146,7 @@ export async function POST(request: Request) {
     if (materials.length > 0 && !materials.includes(item.material)) {
       return NextResponse.json({ error: `Material inválido para ${product.name}.` }, { status: 400 });
     }
-    const personalization = (item.personalization ?? "").trim();
+    const personalization = (item.personalization ?? "").trim().slice(0, 140);
     if (product.customizable && personalization.length === 0) {
       return NextResponse.json(
         { error: `Falta a personalização de ${product.name}.` },
@@ -153,14 +167,11 @@ export async function POST(request: Request) {
     });
   }
 
-  const shippingCents =
-    shippingMethod === "expresso"
-      ? EXPRESS_SHIPPING_CENTS
-      : subtotalCents >= FREE_SHIPPING_THRESHOLD_CENTS
-      ? 0
-      : STANDARD_SHIPPING_CENTS;
-
+  const shippingCents = shippingCostCents(shippingMethod, subtotalCents);
   const totalCents = subtotalCents + shippingCents;
+  const shippingAddress = pickup
+    ? null
+    : { line1, line2: line2 || null, postal_code: postalCode, city };
 
   const { data: order, error: orderError } = await admin
     .from("orders")
@@ -170,13 +181,13 @@ export async function POST(request: Request) {
       payment_method: paymentMethod,
       email,
       shipping_name: shippingName,
-      shipping_address: { line1, line2: line2 || null, postal_code: postalCode, city },
+      shipping_address: shippingAddress,
       shipping_method: shippingMethod,
+      customer_phone: phone || null,
       subtotal_cents: subtotalCents,
       shipping_cents: shippingCents,
       total_cents: totalCents,
       currency: "eur",
-      admin_notes: phone ? `Telefone: ${phone}` : null,
     })
     .select("id")
     .single();
@@ -189,7 +200,10 @@ export async function POST(request: Request) {
   const itemsToInsert = orderItems.map((item) => ({ ...item, order_id: order.id }));
   const { error: itemsError } = await admin.from("order_items").insert(itemsToInsert);
   if (itemsError) {
+    // Uma encomenda sem artigos não pode ficar registada nem gerar um pedido de pagamento.
     console.error("[guedias] erro ao gravar itens da encomenda:", itemsError.message);
+    await admin.from("orders").delete().eq("id", order.id);
+    return NextResponse.json({ error: "Não foi possível registar a encomenda." }, { status: 500 });
   }
 
   await sendOrderReceivedEmail(
@@ -197,7 +211,8 @@ export async function POST(request: Request) {
       id: order.id,
       email,
       shipping_name: shippingName,
-      shipping_address: { line1, line2, postal_code: postalCode, city },
+      shipping_address: shippingAddress,
+      shipping_method: shippingMethod,
       subtotal_cents: subtotalCents,
       shipping_cents: shippingCents,
       total_cents: totalCents,

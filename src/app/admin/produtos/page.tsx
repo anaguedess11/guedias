@@ -8,7 +8,7 @@ import { DeleteProductButton } from "@/components/DeleteProductButton";
 import { AdminFilters } from "@/components/AdminFilters";
 
 export const metadata: Metadata = {
-  title: "Administração de produtos — Guedias",
+  title: "Administração de produtos — Gu3Dias",
 };
 
 export default async function AdminProductsPage({

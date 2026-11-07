@@ -18,9 +18,11 @@ const ORDER: Record<FulfillmentStatus, number> = {
 export function OrderTimeline({
   status,
   fulfillmentStatus,
+  pickup = false,
 }: {
   status: PaymentStatus;
   fulfillmentStatus: FulfillmentStatus;
+  pickup?: boolean;
 }) {
   if (status === "pending" || status === "failed" || status === "canceled") {
     const copy: Record<string, { title: string; body: string; tone: string }> = {
@@ -82,10 +84,10 @@ export function OrderTimeline({
                   isCurrent ? "text-clay-700" : done ? "text-stone-900" : "text-stone-900/40"
                 }`}
               >
-                {step.label}
+                {pickup && step.key === "shipped" ? "Pronta para entrega" : step.label}
               </p>
               <p className={`mt-0.5 text-xs ${done ? "text-stone-900/55" : "text-stone-900/35"}`}>
-                {step.note}
+                {pickup && step.key === "shipped" ? "Vamos contactar-te para combinar." : step.note}
               </p>
             </li>
           );

@@ -15,6 +15,7 @@ import {
 interface OrderActionsProps {
   order: {
     id: string;
+    pickup: boolean;
     status: "pending" | "paid" | "failed" | "canceled" | "refunded";
     total_cents: number;
     refunded_cents: number;
@@ -165,6 +166,7 @@ export function OrderActions({ order }: OrderActionsProps) {
         </div>
       )}
 
+      {!order.pickup && (
       <div className="card space-y-3 p-5">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-stone-900">Morada de envio</h2>
@@ -225,6 +227,7 @@ export function OrderActions({ order }: OrderActionsProps) {
           </div>
         )}
       </div>
+      )}
 
       <div className="card space-y-3 p-5">
         <h2 className="text-sm font-semibold text-stone-900">Notas internas</h2>

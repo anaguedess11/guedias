@@ -5,9 +5,10 @@ import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatPrice } from "@/lib/format";
 import { OrderTimeline } from "@/components/OrderTimeline";
+import { isPickup, shippingMethodLabel } from "@/lib/shipping";
 
 export const metadata: Metadata = {
-  title: "Encomenda — Guedias",
+  title: "Encomenda — Gu3Dias",
 };
 
 interface OrderItemRow {
@@ -106,7 +107,7 @@ export default async function ContaOrderDetailPage({ params }: { params: { id: s
                 <dd>{formatPrice(order.subtotal_cents / 100)}</dd>
               </div>
               <div className="flex justify-between text-stone-900/60">
-                <dt>Envio {order.shipping_method ? `(${order.shipping_method})` : ""}</dt>
+                <dt>{shippingMethodLabel(order.shipping_method) || "Envio"}</dt>
                 <dd>
                   {order.shipping_cents === 0 ? "Grátis" : formatPrice(order.shipping_cents / 100)}
                 </dd>
@@ -133,7 +134,11 @@ export default async function ContaOrderDetailPage({ params }: { params: { id: s
 
         <div className="card h-fit p-5">
           <h2 className="mb-4 text-sm font-semibold text-stone-900">Estado</h2>
-          <OrderTimeline status={order.status} fulfillmentStatus={order.fulfillment_status} />
+          <OrderTimeline
+            status={order.status}
+            fulfillmentStatus={order.fulfillment_status}
+            pickup={isPickup(order.shipping_method)}
+          />
         </div>
       </div>
     </div>

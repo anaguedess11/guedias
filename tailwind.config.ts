@@ -87,9 +87,9 @@ const config: Config = {
         display: ["var(--font-display)", "Georgia", "Cambria", "Times New Roman", "serif"],
       },
       boxShadow: {
-        soft: "0 2px 12px rgb(11 30 61 / 0.06)",
-        card: "0 6px 28px rgb(11 30 61 / 0.09)",
-        lift: "0 16px 40px rgb(11 30 61 / 0.16)",
+        soft: "0 2px 12px rgb(38 37 36 / 0.06)",
+        card: "0 6px 28px rgb(38 37 36 / 0.09)",
+        lift: "0 16px 40px rgb(38 37 36 / 0.16)",
       },
       borderRadius: {
         xl2: "1.25rem",

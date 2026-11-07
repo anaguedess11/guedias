@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { FilamentForm } from "@/components/FilamentForm";
 
 export const metadata: Metadata = {
-  title: "Novo filamento — Guedias",
+  title: "Novo filamento — Gu3Dias",
 };
 
 export default function NovoFilamentoPage() {

@@ -3,8 +3,8 @@ import Link from "next/link";
 import { PrintedObject } from "@/components/PrintedObject";
 
 export const metadata: Metadata = {
-  title: "Sobre — Guedias",
-  description: "Conhece a Guedias e o processo de impressão 3D por trás de cada peça, feita numa Creality Hi Combo.",
+  title: "Sobre — Gu3Dias",
+  description: "Conhece a Gu3Dias e o processo de impressão 3D por trás de cada peça, feita numa Creality Hi Combo.",
 };
 
 const STEPS = [
@@ -18,7 +18,7 @@ const STEPS = [
   },
   {
     title: "3. Impressão na Creality Hi Combo",
-    text: "O filamento — PLA, PETG ou TPU consoante a peça — é fundido e depositado camada sobre camada, até o objeto ganhar forma por completo. Cada peça demora entre 1 a 10 horas a imprimir.",
+    text: "O filamento é fundido e depositado camada sobre camada, até o objeto ganhar forma por completo. O tempo de impressão depende do tamanho e do detalhe de cada peça.",
   },
   {
     title: "4. Acabamento e controlo de qualidade",
@@ -52,7 +52,7 @@ export default function SobrePage() {
               Objetos que nascem em ficheiro digital e ganham forma, a sério, camada a camada.
             </h1>
             <p className="mt-5 text-base leading-relaxed text-stone-900/65">
-              A Guedias nasceu da vontade de mostrar o que a impressão 3D consegue fazer para
+              A Gu3Dias nasceu da vontade de mostrar o que a impressão 3D consegue fazer para
               além de protótipos: peças de decoração, utilidades para o dia a dia e presentes
               verdadeiramente personalizados — todos produzidos na nossa impressora, uma
               Creality Hi Combo, aqui em Portugal.
@@ -80,7 +80,7 @@ export default function SobrePage() {
           <div className="max-w-xl">
             <p className="eyebrow">O processo</p>
             <h2 className="mt-2 font-display text-2xl font-semibold text-stone-900 sm:text-3xl">
-              Como uma peça Guedias é feita
+              Como uma peça Gu3Dias é feita
             </h2>
           </div>
 
@@ -103,7 +103,7 @@ export default function SobrePage() {
               Creality Hi Combo
             </h2>
             <p className="mt-4 text-sm leading-relaxed text-white/70 sm:text-base">
-              Todas as peças da Guedias passam pela nossa Creality Hi Combo, uma impressora 3D
+              Todas as peças da Gu3Dias passam pela nossa Creality Hi Combo, uma impressora 3D
               de deposição de filamento (FDM) que usamos diariamente para transformar modelos
               digitais em objetos físicos. É com ela que testamos novas formas, afinamos
               tolerâncias e produzimos, peça a peça, tudo o que vês na loja.

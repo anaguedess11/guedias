@@ -13,7 +13,7 @@ interface ActionResult {
 }
 
 const ORDER_EMAIL_COLUMNS =
-  "id, email, shipping_name, shipping_address, subtotal_cents, shipping_cents, total_cents";
+  "id, email, shipping_name, shipping_address, shipping_method, subtotal_cents, shipping_cents, total_cents";
 
 function revalidateOrder(orderId: string) {
   revalidatePath("/admin/encomendas");
@@ -70,7 +70,7 @@ export async function updateOrderFulfillment(
 
   const { data: order, error: fetchError } = await supabase
     .from("orders")
-    .select("id, email, shipping_name, shipping_address, subtotal_cents, shipping_cents, total_cents, status")
+    .select(`${ORDER_EMAIL_COLUMNS}, status`)
     .eq("id", orderId)
     .maybeSingle();
 
