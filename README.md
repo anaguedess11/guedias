@@ -72,7 +72,8 @@ nos emails):
 
 ```bash
 NEXT_PUBLIC_MBWAY_PHONE=9xx xxx xxx
-NEXT_PUBLIC_BANK_HOLDER=Nome do titular da conta
+# Opcional: sem titular, o nome não aparece aos clientes.
+NEXT_PUBLIC_BANK_HOLDER=
 NEXT_PUBLIC_BANK_IBAN=PT50 0000 0000 0000 0000 0000 0
 NEXT_PUBLIC_BANK_NAME=Nome do banco
 ```

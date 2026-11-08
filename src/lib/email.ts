@@ -2,7 +2,7 @@ import "server-only";
 import nodemailer from "nodemailer";
 import { formatPrice } from "@/lib/format";
 import { getSiteUrl } from "@/lib/site";
-import { PAYMENT_METHOD_LABEL, paymentDetails, type PaymentMethod } from "@/lib/payment-details";
+import { PAYMENT_METHOD_LABEL, formatIban, paymentDetails, type PaymentMethod } from "@/lib/payment-details";
 import { PICKUP_CITIES, isPickup, type ShippingMethod } from "@/lib/shipping";
 
 // Nomes, moradas e personalizações vêm do cliente: nunca entram em bruto no HTML.
@@ -179,9 +179,9 @@ function paymentInstructionsBlock(paymentMethod: PaymentMethod, totalCents: numb
   <div style="margin-top:20px; padding:16px; border-radius:12px; background:#F8F2EE; border:1px solid #EBD9CC;">
     <p style="margin:0 0 8px; font-size:13px; font-weight:700; color:#171412;">Como pagar por transferência bancária</p>
     <p style="margin:0; font-size:13px; color:#5C5650; line-height:1.6;">
-      Titular: <strong>${paymentDetails.bankHolder || "(a confirmar)"}</strong><br/>
-      IBAN: <strong>${paymentDetails.bankIban || "(a confirmar)"}</strong>
-      ${paymentDetails.bankName ? `<br/>Banco: ${paymentDetails.bankName}` : ""}<br/>
+      ${paymentDetails.bankHolder ? `Titular: <strong>${escapeHtml(paymentDetails.bankHolder)}</strong><br/>` : ""}
+      IBAN: <strong>${paymentDetails.bankIban ? formatIban(paymentDetails.bankIban) : "(a confirmar)"}</strong>
+      ${paymentDetails.bankName ? `<br/>Banco: ${escapeHtml(paymentDetails.bankName)}` : ""}<br/>
       Valor: <strong>${amount}</strong><br/>
       Descrição: indica o número da encomenda para identificarmos o pagamento.
     </p>

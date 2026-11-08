@@ -1,5 +1,5 @@
 import { formatPrice } from "@/lib/format";
-import { PAYMENT_METHOD_LABEL, paymentDetails, type PaymentMethod } from "@/lib/payment-details";
+import { PAYMENT_METHOD_LABEL, formatIban, paymentDetails, type PaymentMethod } from "@/lib/payment-details";
 
 export function PaymentInstructions({
   paymentMethod,
@@ -15,7 +15,7 @@ export function PaymentInstructions({
   return (
     <>
       <h2 className="text-sm font-semibold text-stone-900">
-        Como pagar por {PAYMENT_METHOD_LABEL[paymentMethod]}
+        Como pagar por {paymentMethod === "mbway" ? PAYMENT_METHOD_LABEL.mbway : "transferência bancária"}
       </h2>
       {paymentMethod === "mbway" ? (
         <p className="mt-2 text-sm leading-relaxed text-stone-900/65">
@@ -24,11 +24,16 @@ export function PaymentInstructions({
         </p>
       ) : (
         <div className="mt-2 space-y-1 text-sm leading-relaxed text-stone-900/65">
+          {paymentDetails.bankHolder && (
+            <p>
+              Titular: <strong>{paymentDetails.bankHolder}</strong>
+            </p>
+          )}
           <p>
-            Titular: <strong>{paymentDetails.bankHolder || "(a confirmar — contacta-nos)"}</strong>
-          </p>
-          <p>
-            IBAN: <strong>{paymentDetails.bankIban || "(a confirmar — contacta-nos)"}</strong>
+            IBAN:{" "}
+            <strong className="whitespace-nowrap">
+              {paymentDetails.bankIban ? formatIban(paymentDetails.bankIban) : "(a confirmar — contacta-nos)"}
+            </strong>
           </p>
           {paymentDetails.bankName && <p>Banco: {paymentDetails.bankName}</p>}
           <p>

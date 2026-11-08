@@ -14,8 +14,16 @@ export const paymentDetails = {
   bankName: process.env.NEXT_PUBLIC_BANK_NAME ?? "",
 };
 
-// A transferência só é oferecida ao cliente depois de o IBAN estar preenchido.
-export const isBankTransferAvailable = Boolean(paymentDetails.bankIban && paymentDetails.bankHolder);
+// O valor de exemplo do .env.local.example ("PT50 0000 …") não é um IBAN a sério.
+const isPlaceholderIban = /^PT50[\s0]*$/i.test(paymentDetails.bankIban.trim());
+
+// A transferência só é oferecida ao cliente depois de o IBAN estar preenchido. O titular é opcional.
+export const isBankTransferAvailable = Boolean(paymentDetails.bankIban.trim()) && !isPlaceholderIban;
+
+/** IBAN em grupos de 4, mais fácil de ler e copiar: PT50 0000 0000 … */
+export function formatIban(iban: string): string {
+  return iban.replace(/\s/g, "").toUpperCase().replace(/(.{4})/g, "$1 ").trim();
+}
 
 export function isPaymentMethod(value: unknown): value is PaymentMethod {
   return value === "mbway" || value === "transferencia";
