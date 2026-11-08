@@ -14,11 +14,12 @@ export const paymentDetails = {
   bankName: process.env.NEXT_PUBLIC_BANK_NAME ?? "",
 };
 
-// O valor de exemplo do .env.local.example ("PT50 0000 …") não é um IBAN a sério.
-const isPlaceholderIban = /^PT50[\s0]*$/i.test(paymentDetails.bankIban.trim());
+// Só um IBAN com formato válido conta: valores de exemplo como "PT50...." ou "PT50 0000 …" não.
+const compactIban = paymentDetails.bankIban.replace(/\s/g, "").toUpperCase();
+const isValidIban = /^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/.test(compactIban) && !/^[A-Z]{2}\d{2}0+$/.test(compactIban);
 
-// A transferência só é oferecida ao cliente depois de o IBAN estar preenchido. O titular é opcional.
-export const isBankTransferAvailable = Boolean(paymentDetails.bankIban.trim()) && !isPlaceholderIban;
+// A transferência só é oferecida ao cliente com um IBAN válido. O titular é opcional.
+export const isBankTransferAvailable = isValidIban;
 
 /** IBAN em grupos de 4, mais fácil de ler e copiar: PT50 0000 0000 … */
 export function formatIban(iban: string): string {
