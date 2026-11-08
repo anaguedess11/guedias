@@ -25,10 +25,11 @@ interface ProductRow {
   dimensions: string;
   featured: boolean;
   tags: string[] | null;
+  hidden: boolean | null;
 }
 
 const SELECT_COLUMNS =
-  "id, slug, name, category_key, price_cents, compare_at_price_cents, short_description, description, details, materials, colors, image_url, image_urls, customizable, customization_label, customization_note, profile, print_time_hours, dimensions, featured, tags";
+  "id, slug, name, category_key, price_cents, compare_at_price_cents, short_description, description, details, materials, colors, image_url, image_urls, customizable, customization_label, customization_note, profile, print_time_hours, dimensions, featured, tags, hidden";
 
 function mapRow(row: ProductRow): Product {
   const images =
@@ -61,16 +62,17 @@ function mapRow(row: ProductRow): Product {
     dimensions: row.dimensions,
     featured: row.featured,
     tags: row.tags ?? undefined,
+    hidden: row.hidden ?? false,
   };
 }
 
-export async function getAllProducts(): Promise<Product[]> {
+/** Produtos da loja. Os ocultos só entram com `includeHidden` (admin). */
+export async function getAllProducts({ includeHidden = false } = {}): Promise<Product[]> {
   if (!isSupabaseConfigured) return [];
   const supabase = createClient();
-  const { data, error } = await supabase
-    .from("products")
-    .select(SELECT_COLUMNS)
-    .order("created_at", { ascending: true });
+  let query = supabase.from("products").select(SELECT_COLUMNS);
+  if (!includeHidden) query = query.eq("hidden", false);
+  const { data, error } = await query.order("created_at", { ascending: true });
   if (error) {
     console.error("[guedias] erro ao carregar produtos:", error.message);
     return [];
@@ -85,6 +87,7 @@ export async function getFeaturedProducts(): Promise<Product[]> {
     .from("products")
     .select(SELECT_COLUMNS)
     .eq("featured", true)
+    .eq("hidden", false)
     .order("created_at", { ascending: true });
   if (error) {
     console.error("[guedias] erro ao carregar produtos em destaque:", error.message);
@@ -100,6 +103,7 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
     .from("products")
     .select(SELECT_COLUMNS)
     .eq("slug", slug)
+    .eq("hidden", false)
     .maybeSingle();
   if (error || !data) return null;
   return mapRow(data as ProductRow);
@@ -120,7 +124,11 @@ export async function getProductById(id: string): Promise<Product | null> {
 export async function getProductsByIds(ids: string[]): Promise<Product[]> {
   if (!isSupabaseConfigured || ids.length === 0) return [];
   const supabase = createClient();
-  const { data, error } = await supabase.from("products").select(SELECT_COLUMNS).in("id", ids);
+  const { data, error } = await supabase
+    .from("products")
+    .select(SELECT_COLUMNS)
+    .in("id", ids)
+    .eq("hidden", false);
   if (error || !data) return [];
   const byId = new Map((data as ProductRow[]).map((row) => [row.id, mapRow(row)]));
   // Preserva a ordem pedida (ex.: favoritos mais recentes primeiro)
@@ -135,6 +143,7 @@ export async function getRelatedProducts(product: Product, limit = 4): Promise<P
     .select(SELECT_COLUMNS)
     .eq("category_key", product.category)
     .neq("id", product.id)
+    .eq("hidden", false)
     .limit(limit);
   if (error) {
     console.error("[guedias] erro ao carregar produtos relacionados:", error.message);

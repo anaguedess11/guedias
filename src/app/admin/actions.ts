@@ -104,6 +104,33 @@ export async function updateProduct(
   return { id };
 }
 
+// Ocultar não mexe nas encomendas: o produto continua guardado, só sai da loja.
+export async function setProductHidden(id: string, hidden: boolean): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  if (!admin) return { error: "Sem permissões de administração." };
+
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("products")
+    .update({ hidden })
+    .eq("id", id)
+    .select("slug")
+    .maybeSingle();
+
+  if (error || !data) {
+    console.error("[guedias] erro ao ocultar produto:", error?.message);
+    return { error: hidden ? "Não foi possível ocultar o produto." : "Não foi possível mostrar o produto." };
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/produtos");
+  revalidatePath("/loja");
+  revalidatePath("/");
+  revalidatePath(`/produto/${data.slug}`);
+
+  return { id };
+}
+
 export async function deleteProduct(id: string): Promise<ActionResult> {
   const admin = await requireAdmin();
   if (!admin) return { error: "Sem permissões de administração." };

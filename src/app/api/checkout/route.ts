@@ -112,7 +112,7 @@ export async function POST(request: Request) {
   const productIds = [...new Set(items.map((it) => it.productId))];
   const { data: products, error: productsError } = await admin
     .from("products")
-    .select("id, name, price_cents, colors, materials, customizable")
+    .select("id, name, price_cents, colors, materials, customizable, hidden")
     .in("id", productIds);
 
   if (productsError || !products) {
@@ -137,8 +137,8 @@ export async function POST(request: Request) {
     if (!product) {
       return NextResponse.json({ error: "Produto não encontrado." }, { status: 400 });
     }
-    // Produto ainda sem preço: não pode ser encomendado de graça.
-    if (product.price_cents <= 0) {
+    // Produto oculto ou ainda sem preço: não pode ser encomendado (pode ter ficado num carrinho antigo).
+    if (product.hidden || product.price_cents <= 0) {
       return NextResponse.json(
         { error: `${product.name} ainda não está disponível para compra.` },
         { status: 400 }

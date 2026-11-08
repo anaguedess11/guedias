@@ -36,6 +36,8 @@ export interface Product {
   dimensions: string;
   featured?: boolean;
   tags?: string[];
+  /** Oculto da loja: só aparece no admin e não pode ser comprado. */
+  hidden: boolean;
 }
 
 export interface CartItem {

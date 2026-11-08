@@ -5,6 +5,7 @@ import { categories, getCategory } from "@/data/categories";
 import { formatPrice } from "@/lib/format";
 import { PrintedObject } from "@/components/PrintedObject";
 import { DeleteProductButton } from "@/components/DeleteProductButton";
+import { ToggleProductHiddenButton } from "@/components/ToggleProductHiddenButton";
 import { AdminFilters } from "@/components/AdminFilters";
 
 export const metadata: Metadata = {
@@ -20,10 +21,12 @@ export default async function AdminProductsPage({
     destaque?: string;
     personalizavel?: string;
     foto?: string;
+    visibilidade?: string;
     ordenar?: string;
   };
 }) {
-  const all = await getAllProducts();
+  const all = await getAllProducts({ includeHidden: true });
+  const hiddenCount = all.filter((p) => p.hidden).length;
 
   const q = (searchParams.q ?? "").toLowerCase().trim();
 
@@ -35,6 +38,8 @@ export default async function AdminProductsPage({
     if (searchParams.personalizavel === "nao" && p.customizable) return false;
     if (searchParams.foto === "com" && !p.imageUrl) return false;
     if (searchParams.foto === "sem" && p.imageUrl) return false;
+    if (searchParams.visibilidade === "visiveis" && p.hidden) return false;
+    if (searchParams.visibilidade === "ocultos" && !p.hidden) return false;
     if (q && !`${p.name} ${p.slug}`.toLowerCase().includes(q)) return false;
     return true;
   });
@@ -65,7 +70,8 @@ export default async function AdminProductsPage({
             Produtos
           </h1>
           <p className="mt-1 text-sm text-stone-900/55">
-            {filtered ? `${products.length} de ${all.length}` : `${all.length}`} produtos na loja.
+            {filtered ? `${products.length} de ${all.length}` : `${all.length}`} produtos
+            {hiddenCount > 0 && ` · ${hiddenCount} ${hiddenCount === 1 ? "oculto" : "ocultos"}`}.
           </p>
         </div>
         <Link href="/admin/produtos/novo" className="btn-primary">
@@ -106,6 +112,14 @@ export default async function AdminProductsPage({
             ],
           },
           {
+            param: "visibilidade",
+            label: "Visibilidade",
+            options: [
+              { value: "visiveis", label: "visíveis" },
+              { value: "ocultos", label: "ocultos" },
+            ],
+          },
+          {
             param: "ordenar",
             label: "Ordenar",
             emptyLabel: "Ordenar: recentes",
@@ -127,7 +141,10 @@ export default async function AdminProductsPage({
       ) : (
         <div className="space-y-3">
           {products.map((product) => (
-            <div key={product.id} className="card flex items-center gap-4 p-4">
+            <div
+              key={product.id}
+              className={`card flex items-center gap-4 p-4 ${product.hidden ? "bg-stone-50 opacity-75" : ""}`}
+            >
               {product.imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -147,6 +164,11 @@ export default async function AdminProductsPage({
                 <p className="truncate text-sm font-medium text-stone-900">{product.name}</p>
                 <p className="mt-0.5 text-xs text-stone-900/45">
                   {getCategory(product.category)?.label} · {product.slug}
+                  {product.hidden && (
+                    <span className="ml-2 rounded-full bg-stone-900/10 px-2 py-0.5 font-medium text-stone-900/70">
+                      Oculto
+                    </span>
+                  )}
                   {product.featured && (
                     <span className="ml-2 rounded-full bg-clay-500/10 px-2 py-0.5 text-clay-700">
                       Destaque
@@ -171,6 +193,7 @@ export default async function AdminProductsPage({
                 >
                   Editar
                 </Link>
+                <ToggleProductHiddenButton id={product.id} hidden={product.hidden} />
                 <DeleteProductButton id={product.id} name={product.name} />
               </div>
             </div>

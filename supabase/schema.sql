@@ -42,6 +42,7 @@ create table if not exists products (
   print_time_hours numeric not null default 1,
   dimensions text not null default '',
   featured boolean not null default false,
+  hidden boolean not null default false,          -- oculto da loja (continua no admin e nas encomendas)
   tags text[] not null default '{}',
   created_at timestamptz not null default now()
 );
