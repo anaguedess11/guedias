@@ -63,7 +63,7 @@ export default function CarrinhoPage() {
                       {item.name}
                     </Link>
                     <p className="mt-1 text-xs text-stone-900/50">
-                      {item.color} · {item.material}
+                      {item.model ? `${item.model} · ` : ""}{item.color} · {item.material}
                     </p>
                     {item.personalization && (
                       <p className="mt-1 text-xs italic text-stone-900/60">

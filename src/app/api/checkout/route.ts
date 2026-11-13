@@ -17,6 +17,7 @@ interface CheckoutItemInput {
   color: string;
   material: string;
   personalization?: string;
+  model?: string;
 }
 
 interface ShippingInput {
@@ -112,7 +113,7 @@ export async function POST(request: Request) {
   const productIds = [...new Set(items.map((it) => it.productId))];
   const { data: products, error: productsError } = await admin
     .from("products")
-    .select("id, name, price_cents, colors, materials, customizable, hidden")
+    .select("id, name, price_cents, colors, materials, customizable, hidden, models")
     .in("id", productIds);
 
   if (productsError || !products) {
@@ -130,6 +131,7 @@ export async function POST(request: Request) {
     color: string | null;
     material: string | null;
     personalization: string | null;
+    model: string | null;
   }> = [];
 
   for (const item of items) {
@@ -148,6 +150,11 @@ export async function POST(request: Request) {
     const colorNames = ((product.colors as { name: string }[]) ?? []).map((c) => c.name);
     if (colorNames.length > 0 && !colorNames.includes(item.color)) {
       return NextResponse.json({ error: `Cor inválida para ${product.name}.` }, { status: 400 });
+    }
+    const models = (product.models as string[]) ?? [];
+    const model = (item.model ?? "").trim();
+    if (models.length > 0 && !models.includes(model)) {
+      return NextResponse.json({ error: `Escolhe um modelo válido para ${product.name}.` }, { status: 400 });
     }
     const materials = (product.materials as string[]) ?? [];
     if (materials.length > 0 && !materials.includes(item.material)) {
@@ -171,6 +178,7 @@ export async function POST(request: Request) {
       color: item.color || null,
       material: item.material || null,
       personalization: personalization || null,
+      model: models.length > 0 ? model : null,
     });
   }
 

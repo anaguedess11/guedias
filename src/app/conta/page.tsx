@@ -11,6 +11,7 @@ interface OrderItemRow {
   color: string | null;
   material: string | null;
   personalization: string | null;
+  model?: string | null;
 }
 
 type FulfillmentStatus = "not_started" | "in_production" | "shipped" | "delivered";
@@ -57,7 +58,7 @@ export default async function ContaPage() {
   const { data: orders } = await supabase
     .from("orders")
     .select(
-      "id, status, fulfillment_status, total_cents, currency, created_at, shipping_method, order_items(name, qty, price_cents, color, material, personalization)"
+      "id, status, fulfillment_status, total_cents, currency, created_at, shipping_method, order_items(name, qty, price_cents, color, material, personalization, model)"
     )
     .order("created_at", { ascending: false })
     .returns<OrderRow[]>();
@@ -129,7 +130,7 @@ export default async function ContaPage() {
                     <li key={i} className="flex justify-between gap-3 py-2.5 text-sm">
                       <span className="text-stone-900/70">
                         {item.qty}× {item.name}
-                        {item.color ? ` · ${item.color}` : ""}
+                        {item.model ? ` · ${item.model}` : ""}{item.color ? ` · ${item.color}` : ""}
                       </span>
                       <span className="whitespace-nowrap font-medium text-stone-900">
                         {formatPrice((item.price_cents * item.qty) / 100)}

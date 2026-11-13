@@ -19,6 +19,7 @@ interface OrderItemRow {
   color: string | null;
   material: string | null;
   personalization: string | null;
+  model?: string | null;
 }
 
 interface OrderRow {
@@ -67,7 +68,7 @@ export default async function AdminOrderDetailPage({ params }: { params: { id: s
   const { data } = await supabase
     .from("orders")
     .select(
-      "id, email, status, payment_method, fulfillment_status, subtotal_cents, shipping_cents, total_cents, refunded_cents, currency, created_at, shipping_name, shipping_address, shipping_method, customer_phone, admin_notes, order_items(name, qty, price_cents, color, material, personalization)"
+      "id, email, status, payment_method, fulfillment_status, subtotal_cents, shipping_cents, total_cents, refunded_cents, currency, created_at, shipping_name, shipping_address, shipping_method, customer_phone, admin_notes, order_items(name, qty, price_cents, color, material, personalization, model)"
     )
     .eq("id", params.id)
     .maybeSingle();
@@ -131,9 +132,9 @@ export default async function AdminOrderDetailPage({ params }: { params: { id: s
                       {formatPrice((item.price_cents * item.qty) / 100)}
                     </span>
                   </div>
-                  {(item.color || item.material || item.personalization) && (
+                  {(item.model || item.color || item.material || item.personalization) && (
                     <p className="mt-0.5 text-xs text-stone-900/45">
-                      {[item.color, item.material].filter(Boolean).join(" · ")}
+                      {[item.model, item.color, item.material].filter(Boolean).join(" · ")}
                       {item.personalization ? ` · “${item.personalization}”` : ""}
                     </p>
                   )}

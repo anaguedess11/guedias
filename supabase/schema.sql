@@ -42,6 +42,7 @@ create table if not exists products (
   print_time_hours numeric not null default 1,
   dimensions text not null default '',
   featured boolean not null default false,
+  models text[] not null default '{}',           -- modelos à escolha (ex.: Meia de Natal, Laço)
   hidden boolean not null default false,          -- oculto da loja (continua no admin e nas encomendas)
   tags text[] not null default '{}',
   created_at timestamptz not null default now()
@@ -198,7 +199,8 @@ create table if not exists order_items (
   qty integer not null check (qty > 0),
   color text,
   material text,
-  personalization text
+  personalization text,
+  model text
 );
 
 create index if not exists order_items_order_id_idx on order_items (order_id);

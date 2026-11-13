@@ -47,6 +47,7 @@ function toFormState(product?: Product) {
     dimensions: product?.dimensions ?? "",
     featured: product?.featured ?? false,
     tags: product?.tags?.join(", ") ?? "",
+    models: product?.models?.join("\n") ?? "",
   };
 }
 
@@ -176,6 +177,7 @@ export function ProductForm({
       dimensions: form.dimensions.trim(),
       featured: form.featured,
       tags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),
+      models: [...new Set(form.models.split("\n").map((m) => m.trim()).filter(Boolean))],
     };
 
     setSaving(true);
@@ -390,6 +392,20 @@ export function ProductForm({
         )}
 
         <ImageGalleryField value={images} onChange={setImages} slug={form.slug || form.name} />
+      </div>
+
+      <div className="card space-y-3 p-6">
+        <h2 className="text-sm font-semibold text-stone-900">Modelos (opcional)</h2>
+        <p className="text-xs text-stone-900/50">
+          Um modelo por linha (ex.: Meia de Natal, Laço). O cliente escolhe um. Deixa vazio se o
+          produto só tiver um modelo.
+        </p>
+        <textarea
+          className="input min-h-[110px] resize-y"
+          placeholder={"Meia de Natal\nÁrvore de Natal\nLaço"}
+          value={form.models}
+          onChange={(e) => set("models", e.target.value)}
+        />
       </div>
 
       <div className="card space-y-4 p-6">

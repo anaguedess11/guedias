@@ -28,7 +28,7 @@ export async function markOrderPaid(orderId: string): Promise<ActionResult> {
   const supabase = createAdminClient();
   const { data: order } = await supabase
     .from("orders")
-    .select(`${ORDER_EMAIL_COLUMNS}, status, order_items(name, qty, price_cents, color, material, personalization)`)
+    .select(`${ORDER_EMAIL_COLUMNS}, status, order_items(name, qty, price_cents, color, material, personalization, model)`)
     .eq("id", orderId)
     .maybeSingle();
 
@@ -52,6 +52,7 @@ export async function markOrderPaid(orderId: string): Promise<ActionResult> {
       color: string | null;
       material: string | null;
       personalization: string | null;
+      model?: string | null;
     }[];
   };
   await sendOrderConfirmationEmail(emailOrder, order_items ?? []);
@@ -257,7 +258,7 @@ export async function resendConfirmationEmail(orderId: string): Promise<ActionRe
   const supabase = createAdminClient();
   const { data: order } = await supabase
     .from("orders")
-    .select(`${ORDER_EMAIL_COLUMNS}, order_items(name, qty, price_cents, color, material, personalization)`)
+    .select(`${ORDER_EMAIL_COLUMNS}, order_items(name, qty, price_cents, color, material, personalization, model)`)
     .eq("id", orderId)
     .maybeSingle();
 
@@ -272,6 +273,7 @@ export async function resendConfirmationEmail(orderId: string): Promise<ActionRe
       color: string | null;
       material: string | null;
       personalization: string | null;
+      model?: string | null;
     }[];
   };
 

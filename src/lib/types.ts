@@ -36,6 +36,8 @@ export interface Product {
   dimensions: string;
   featured?: boolean;
   tags?: string[];
+  /** Modelos à escolha (ex.: Meia de Natal, Laço). Vazio = produto sem modelos. */
+  models: string[];
   /** Oculto da loja: só aparece no admin e não pode ser comprado. */
   hidden: boolean;
 }
@@ -49,6 +51,7 @@ export interface CartItem {
   color: string;
   material: string;
   personalization?: string;
+  model?: string;
   profile: ShapeProfile;
   imageUrl?: string;
   colorHex?: string;
@@ -84,6 +87,7 @@ export interface ProductWriteInput {
   dimensions: string;
   featured: boolean;
   tags: string[];
+  models: string[];
 }
 
 // ─────────────────────────────────────────────────────────────

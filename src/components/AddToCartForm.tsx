@@ -9,6 +9,7 @@ export function AddToCartForm({ product }: { product: Product }) {
   const { addItem } = useCart();
   const router = useRouter();
 
+  const [model, setModel] = useState(product.models[0] ?? "");
   const [color, setColor] = useState(product.colors[0]?.name ?? "");
   const [personalization, setPersonalization] = useState("");
   const [qty, setQty] = useState(1);
@@ -32,6 +33,7 @@ export function AddToCartForm({ product }: { product: Product }) {
       slug: product.slug,
       name: product.name,
       price: product.price,
+      model: product.models.length > 0 ? model : undefined,
       color,
       // O cliente só escolhe a cor: o material vem do filamento dessa cor.
       material: selectedColor?.material ?? product.materials[0] ?? "",
@@ -48,6 +50,30 @@ export function AddToCartForm({ product }: { product: Product }) {
 
   return (
     <div className="space-y-6">
+      {/* Modelo */}
+      {product.models.length > 0 && (
+        <div>
+          <span className="label">Modelo — {model}</span>
+          <div className="flex flex-wrap gap-2">
+            {product.models.map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setModel(m)}
+                aria-pressed={model === m}
+                className={`rounded-full border px-4 py-2 text-sm transition-colors ${
+                  model === m
+                    ? "border-clay-500 bg-clay-50 font-medium text-stone-900"
+                    : "border-pine-900/15 bg-white text-stone-900/70 hover:border-clay-500/40"
+                }`}
+              >
+                {m}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Cor */}
       <div>
         <span className="label">Cor — {color}</span>

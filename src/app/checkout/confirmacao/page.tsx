@@ -16,6 +16,7 @@ interface OrderItemRow {
   color: string | null;
   material: string | null;
   personalization: string | null;
+  model?: string | null;
 }
 
 interface OrderRow {
@@ -66,7 +67,7 @@ export default async function ConfirmacaoPage({
   const { data } = await admin
     .from("orders")
     .select(
-      "id, status, payment_method, email, shipping_name, shipping_address, shipping_method, subtotal_cents, shipping_cents, total_cents, order_items(id, name, qty, price_cents, color, material, personalization)"
+      "id, status, payment_method, email, shipping_name, shipping_address, shipping_method, subtotal_cents, shipping_cents, total_cents, order_items(id, name, qty, price_cents, color, material, personalization, model)"
     )
     .eq("id", orderId)
     .maybeSingle();
@@ -145,7 +146,7 @@ export default async function ConfirmacaoPage({
               <span className="text-stone-900/70">
                 {item.qty}× {item.name}
                 <span className="block text-xs text-stone-900/45">
-                  {[item.color, item.material].filter(Boolean).join(" · ")}
+                  {[item.model, item.color, item.material].filter(Boolean).join(" · ")}
                   {item.personalization ? ` · “${item.personalization}”` : ""}
                 </span>
               </span>

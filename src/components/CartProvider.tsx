@@ -20,6 +20,7 @@ interface AddItemInput {
   color: string;
   material: string;
   personalization?: string;
+  model?: string;
   profile: number[];
   imageUrl?: string;
   colorHex?: string;
@@ -39,8 +40,8 @@ interface CartContextValue {
 
 const CartContext = createContext<CartContextValue | null>(null);
 
-function makeKey(productId: string, color: string, material: string, personalization?: string) {
-  return [productId, color, material, personalization ?? ""].join("::");
+function makeKey(productId: string, color: string, material: string, personalization?: string, model?: string) {
+  return [productId, model ?? "", color, material, personalization ?? ""].join("::");
 }
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
@@ -66,7 +67,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [items, isHydrated]);
 
   const addItem = useCallback((input: AddItemInput) => {
-    const key = makeKey(input.productId, input.color, input.material, input.personalization);
+    const key = makeKey(input.productId, input.color, input.material, input.personalization, input.model);
     setItems((prev) => {
       const existing = prev.find((it) => it.key === key);
       if (existing) {
@@ -85,6 +86,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           color: input.color,
           material: input.material,
           personalization: input.personalization,
+          model: input.model,
           profile: input.profile,
           imageUrl: input.imageUrl,
           colorHex: input.colorHex,

@@ -26,10 +26,11 @@ interface ProductRow {
   featured: boolean;
   tags: string[] | null;
   hidden: boolean | null;
+  models: string[] | null;
 }
 
 const SELECT_COLUMNS =
-  "id, slug, name, category_key, price_cents, compare_at_price_cents, short_description, description, details, materials, colors, image_url, image_urls, customizable, customization_label, customization_note, profile, print_time_hours, dimensions, featured, tags, hidden";
+  "id, slug, name, category_key, price_cents, compare_at_price_cents, short_description, description, details, materials, colors, image_url, image_urls, customizable, customization_label, customization_note, profile, print_time_hours, dimensions, featured, tags, hidden, models";
 
 function mapRow(row: ProductRow): Product {
   const images =
@@ -63,6 +64,7 @@ function mapRow(row: ProductRow): Product {
     featured: row.featured,
     tags: row.tags ?? undefined,
     hidden: row.hidden ?? false,
+    models: row.models ?? [],
   };
 }
 

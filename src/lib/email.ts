@@ -79,6 +79,7 @@ export interface EmailOrderItem {
   color: string | null;
   material: string | null;
   personalization: string | null;
+  model?: string | null;
 }
 
 export interface EmailOrder {
@@ -120,7 +121,7 @@ function layout(title: string, bodyHtml: string): string {
 function itemsTable(items: EmailOrderItem[]): string {
   const rows = items
     .map((item) => {
-      const variant = escapeHtml([item.color, item.material].filter(Boolean).join(" · "));
+      const variant = escapeHtml([item.model, item.color, item.material].filter(Boolean).join(" · "));
       const note = item.personalization
         ? `<br/><em style="color:#8A8480;">"${escapeHtml(item.personalization)}"</em>`
         : "";

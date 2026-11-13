@@ -121,6 +121,7 @@ export default function CheckoutPage() {
             productId: it.productId,
             qty: it.qty,
             color: it.color,
+            model: it.model,
             material: it.material,
             personalization: it.personalization,
           })),
@@ -165,7 +166,7 @@ export default function CheckoutPage() {
                 <div className="flex flex-1 flex-col justify-center">
                   <p className="text-sm font-medium text-stone-900">{item.name}</p>
                   <p className="mt-0.5 text-xs text-stone-900/50">
-                    {item.qty}× · {item.color} · {item.material}
+                    {item.qty}× · {item.model ? `${item.model} · ` : ""}{item.color} · {item.material}
                   </p>
                   {item.personalization && (
                     <p className="mt-0.5 text-xs italic text-stone-900/60">
